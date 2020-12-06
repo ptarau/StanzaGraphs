@@ -262,6 +262,12 @@ def ensure_path(fname) :
   os.makedirs(dir, exist_ok=True)
 
 
+def process_file(fname='texts/english',lang='en') :
+  nlp = NLP(lang)
+  nlp.from_file(fname)
+  nlp.to_tsv()
+  return nlp
+
 # TESTS
 
 def test(fname='texts/english',lang='en') :

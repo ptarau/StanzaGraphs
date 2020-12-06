@@ -21,8 +21,12 @@ class Data :
   links are of the form POS_deprelPOS wuth POS and deprel
   tags concatenated
   '''
-  def __init__(self,fname='texts/english') :
-    wss = tsv2mat("out/"+fname+".tsv")
+  def __init__(self,fname='texts/english',lang='en') :
+    edge_file="out/"+fname+".tsv"
+    if not nlp.exists_file(edge_file) :
+      nlp.process_file(fname=fname,lang=lang)
+
+    wss = tsv2mat(edge_file)
     self.sents=tsv2mat("out/"+fname+"_sents.tsv")
     occs=defaultdict(set)
     sids=set()
@@ -67,8 +71,8 @@ class Query(Data) :
   text query and matches it against data to retrive
   sentences in which most of those edges occur
   '''
-  def __init__(self,fname='texts/english'):
-    super().__init__(fname=fname)
+  def __init__(self,fname='texts/english',lang='en'):
+    super().__init__(fname=fname,lang=lang)
     self.nlp_engine=nlp.NLP()
 
   def ask(self,text=None):
@@ -95,8 +99,8 @@ class Inferencer(Query) :
   loads model trained on associating dependency
   edges to sentences in which they occur
   '''
-  def __init__(self,fname='texts/english'):
-    super().__init__(fname=fname)
+  def __init__(self,fname='texts/english',lang='en'):
+    super().__init__(fname=fname,lang=lang)
     self.model = load_model("out/"+fname+"_model")
 
   def query(self,text=None):
@@ -118,6 +122,8 @@ class Trainer(Data) :
   neural network trainer and model builder
   '''
   def __init__(self,fname='texts/english',activation='sigmoid'):
+    model_file="out/"+fname+"_model"
+    if nlp.exists_file(model_file) : return
     super().__init__(fname=fname)
     model = keras.Sequential()
     model.add(layers.Dense(128, input_dim=self.hot_X.shape[1], activation=activation))
@@ -133,7 +139,7 @@ class Trainer(Data) :
     model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
     history = model.fit(self.hot_X, self.hot_y, epochs=100, batch_size=16)
 
-    model.save("out/"+fname+"_model")
+    model.save(model_file)
 
     # visualize and inform about accuracy and loss
     plot_graphs(fname + "_loss", history, 'loss')
