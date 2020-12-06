@@ -1,0 +1,7 @@
+numpy
+sklearn
+networkx
+matplotlib
+stanza
+graphviz
+tensorflow
