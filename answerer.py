@@ -122,6 +122,8 @@ class Trainer(Data) :
   neural network trainer and model builder
   '''
   def __init__(self,fname='texts/english',activation='sigmoid'):
+    nlp.ensure_path("out/")
+    nlp.ensure_path("pics/")
     model_file="out/"+fname+"_model"
     if nlp.exists_file(model_file) : return
     super().__init__(fname=fname)
@@ -142,8 +144,8 @@ class Trainer(Data) :
     model.save(model_file)
 
     # visualize and inform about accuracy and loss
-    plot_graphs(fname + "_loss", history, 'loss')
-    plot_graphs(fname + "_acc", history, 'accuracy')
+    plot_graphs("pics/"+fname + "_loss", history, 'loss')
+    plot_graphs("pics/"+fname + "_acc", history, 'accuracy')
 
     loss, accuracy = model.evaluate(self.hot_X, self.hot_y)
     print('Accuracy:', round(100 * accuracy, 2), ', % Loss:', round(100 * loss, 2), '%')
@@ -154,12 +156,13 @@ class Trainer(Data) :
 import matplotlib.pyplot as plt
 
 def plot_graphs(fname,history, metric):
+  nlp.ensure_path(fname)
   plt.plot(history.history[metric])
   #plt.plot(history.history['val_'+metric], '')
   plt.xlabel("Epochs")
   plt.ylabel(metric)
   plt.legend([metric, 'val_'+metric])
-  plt.savefig("pics/"+fname + '.pdf',format="pdf",bbox_inches='tight')
+  plt.savefig(fname + '.pdf',format="pdf",bbox_inches='tight')
   #plt.show()
   plt.close()
 
