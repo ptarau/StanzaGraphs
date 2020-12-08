@@ -4,9 +4,6 @@ import csv
 from sklearn.preprocessing import OneHotEncoder
 import numpy as np
 from collections import defaultdict, Counter
-from tensorflow import keras
-from tensorflow.keras import layers
-from tensorflow.keras.models import load_model
 
 # turns .tsv file into list of lists
 def tsv2mat(fname) :
@@ -18,7 +15,7 @@ class Data :
   '''
   builds dataset from dependency edges in .tsv file associating
   <from,link,to> edges and sentences in which they occur;
-  links are of the form POS_deprelPOS wuth POS and deprel
+  links are of the form POS_deprel_POS with POS and deprel
   tags concatenated
   '''
   def __init__(self,fname='texts/english',lang='en') :
@@ -94,78 +91,6 @@ class Query(Data) :
       print(id, ':', sent)
     print("")
 
-class Inferencer(Query) :
-  '''
-  loads model trained on associating dependency
-  edges to sentences in which they occur
-  '''
-  def __init__(self,fname='texts/english',lang='en'):
-    super().__init__(fname=fname,lang=lang)
-    self.model = load_model("out/"+fname+"_model")
-
-  def query(self,text=None):
-    if not text: text = input("Query:")
-    else: print("Query:", text)
-    self.nlp_engine.from_text(text)
-    X=[]
-    for f, r, t, _ in self.nlp_engine.facts():
-      X.append([f,r,t])
-    X = np.array(X)
-    hot_X = self.enc_X.transform(X).toarray()
-    y=self.model.predict(hot_X)
-    m=self.enc_y.inverse_transform(y)
-    sids=m.flatten().tolist()
-    self.show_answers(sids)
-
-class Trainer(Data) :
-  '''
-  neural network trainer and model builder
-  '''
-  def __init__(self,fname='texts/english',activation='sigmoid'):
-    nlp.ensure_path("out/")
-    nlp.ensure_path("pics/")
-    model_file="out/"+fname+"_model"
-    if nlp.exists_file(model_file) : return
-    super().__init__(fname=fname)
-    model = keras.Sequential()
-    model.add(layers.Dense(128, input_dim=self.hot_X.shape[1], activation=activation))
-    #model.add(layers.Dropout(0.5))
-    model.add(layers.Dense(128, input_dim=self.hot_X.shape[1], activation=activation))
-    #model.add(layers.Dropout(0.5))
-    model.add(layers.Dense(128, input_dim=self.hot_X.shape[1], activation=activation))
-    #model.add(layers.Dropout(0.5))
-    model.add(layers.Dense(128, input_dim=self.hot_X.shape[1], activation=activation))
-    #model.add(layers.Dropout(0.5))
-    model.add(layers.Dense(self.hot_y.shape[1], activation='sigmoid'))
-    model.summary()
-    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-    history = model.fit(self.hot_X, self.hot_y, epochs=100, batch_size=16)
-
-    model.save(model_file)
-
-    # visualize and inform about accuracy and loss
-    plot_graphs("pics/"+fname + "_loss", history, 'loss')
-    plot_graphs("pics/"+fname + "_acc", history, 'accuracy')
-
-    loss, accuracy = model.evaluate(self.hot_X, self.hot_y)
-    print('Accuracy:', round(100 * accuracy, 2), ', % Loss:', round(100 * loss, 2), '%')
-
-
-# VISUALS
-
-import matplotlib.pyplot as plt
-
-def plot_graphs(fname,history, metric):
-  nlp.ensure_path(fname)
-  plt.plot(history.history[metric])
-  #plt.plot(history.history['val_'+metric], '')
-  plt.xlabel("Epochs")
-  plt.ylabel(metric)
-  plt.legend([metric, 'val_'+metric])
-  plt.savefig(fname + '.pdf',format="pdf",bbox_inches='tight')
-  #plt.show()
-  plt.close()
-
 
 ### TESTS ###
 
@@ -182,23 +107,21 @@ def dtest() :
   print(d.hot_y)
 
 def dtests():
+  ''' data loading tests'''
   dtest('out/texts/english.tsv')
   dtest('out/texts/const.tsv')
   dtest('out/texts/spanish.tsv')
   dtest('out/texts/chinese.tsv')
   dtest('out/texts/russian.tsv')
 
-def ntest() :
-  t=Trainer()
-  i=Inferencer()
+def atest() :
+  ''' tests symbolic and neural QA on given document '''
+  i=Query()
   print("\n\n")
   print("ALGORITHMICALLY DERIVED ANSWERS:\n")
   i.ask("What did about black holes?")
   i.ask(text="What was in Roger's 1965 paper?")
   print("\n")
-  print("NEURAL NET'S ANSWERS:\n")
-  i.query("What did Penrose show about black holes?")
-  i.query(text="What was in Roger's 1965 paper?")
 
 if __name__=="__main__" :
-  ntest()
+  atest()
