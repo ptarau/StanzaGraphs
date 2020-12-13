@@ -27,11 +27,15 @@ class Data :
     self.sents=tsv2mat("out/"+fname+"_sents.tsv")
     occs=defaultdict(set)
     sids=set()
+    lens=[]
     for f,r,t,id in wss:
       id=int(id)
+      if len(lens)<=id : lens.append(0)
+      lens[id]+=1
       occs[(f,r,t)].add(id)
       sids.add(id)
     self.occs=occs # dict where edges occur
+    self.lens=lens # number of edges in each sentence
 
     X,Y=list(zip(*list(occs.items())))
     X = np.array(X)
@@ -61,6 +65,7 @@ class Data :
     self.hot_y =hot_y
 
     print('\nFINAL DTATA SHAPES','X',hot_X.shape,'y',hot_y.shape,'\n')
+    #print('SENTENCE LENGTHS',lens)
 
 class Query(Data) :
   '''
@@ -73,6 +78,11 @@ class Query(Data) :
     self.nlp_engine=nlp.NLP()
 
   def ask(self,text=None):
+    '''
+    compute Jaccard similarity between
+    set of edges in query and each sentence,
+    then select the most similar ones
+    '''
     if not text: text = input("Query:")
     else: print("Query:",text)
 
@@ -84,7 +94,13 @@ class Query(Data) :
 
   def show_answers(self, sids, k=3):
     c = Counter(sids)
-    print('\nHIT COUNTS:',c,"\n")
+    qlen=len(list(self.nlp_engine.facts()))
+
+    for id in c:
+      shared=c[id]
+      jaccard=shared/(self.lens[id]+qlen-shared)
+      c[id]=jaccard
+    print('\nHIT WEIGHTS:', c, "\n")
     best = c.most_common(k)
     for sid, _ in best:
       id, sent = self.sents[sid]
@@ -109,7 +125,6 @@ def dtest() :
 def dtests():
   ''' data loading tests'''
   dtest('out/texts/english.tsv')
-  dtest('out/texts/const.tsv')
   dtest('out/texts/spanish.tsv')
   dtest('out/texts/chinese.tsv')
   dtest('out/texts/russian.tsv')
@@ -119,7 +134,7 @@ def atest() :
   i=Query()
   print("\n\n")
   print("ALGORITHMICALLY DERIVED ANSWERS:\n")
-  i.ask("What did about black holes?")
+  i.ask("What did Penrose show about black holes?")
   i.ask(text="What was in Roger's 1965 paper?")
   print("\n")
 
