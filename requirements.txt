@@ -5,3 +5,4 @@ matplotlib
 stanza
 graphviz
 tensorflow
+skorch

@@ -5,30 +5,6 @@ from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras.models import load_model
 
-class Inferencer(Query) :
-  '''
-  loads model trained on associating dependency
-  edges to sentences in which they occur
-  '''
-  def __init__(self,fname='texts/english',lang='en'):
-    super().__init__(fname=fname,lang=lang)
-    self.model = load_model("out/"+fname+"_model")
-
-  def query(self,text=None):
-    ''' answers queries based on model built by Trainer'''
-    if not text: text = input("Query:")
-    else: print("Query:", text)
-    self.nlp_engine.from_text(text)
-    X=[]
-    for f, r, t, _ in self.nlp_engine.facts():
-      X.append([f,r,t])
-    X = np.array(X)
-    hot_X = self.enc_X.transform(X).toarray()
-    y=self.model.predict(hot_X)
-    m=self.enc_y.inverse_transform(y)
-    sids=m.flatten().tolist()
-    self.show_answers(sids)
-
 class Trainer(Data) :
   '''
   simple keras neural network trainer and model builder
@@ -62,6 +38,30 @@ class Trainer(Data) :
     loss, accuracy = model.evaluate(self.hot_X, self.hot_y)
     print('Accuracy:', round(100 * accuracy, 2), ', % Loss:', round(100 * loss, 2), '%')
 
+class Inferencer(Query) :
+  '''
+  loads model trained on associating dependency
+  edges to sentences in which they occur
+  '''
+  def __init__(self,fname='texts/english',lang='en'):
+    super().__init__(fname=fname,lang=lang)
+    self.model = load_model("out/"+fname+"_model")
+
+  def query(self,text=None):
+    ''' answers queries based on model built by Trainer'''
+    if not text: text = input("Query:")
+    else: print("Query:", text)
+    self.nlp_engine.from_text(text)
+    X=[]
+    for f, r, t, _ in self.nlp_engine.facts():
+      X.append([f,r,t])
+    X = np.array(X)
+    hot_X = self.enc_X.transform(X).toarray()
+    y=self.model.predict(hot_X)
+    #print('@@@',y.shape)
+    m=self.enc_y.inverse_transform(y)
+    sids=m.flatten().tolist()
+    self.show_answers(sids)
 
 # VISUALS
 
