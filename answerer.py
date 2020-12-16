@@ -78,14 +78,14 @@ class Query(Data) :
     super().__init__(fname=fname,lang=lang)
     self.nlp_engine=nlp.NLP()
 
-  def ask(self,text=None):
+  def ask(self,text=None,interactive=False):
     '''
     compute Jaccard similarity between
     set of edges in query and each sentence,
     then select the most similar ones
     '''
     if not text: text = input("Query:")
-    else: print("Query:",text)
+    elif interactive: print("Query:",text)
 
     self.nlp_engine.from_text(text)
     sids=[]
@@ -109,6 +109,12 @@ class Query(Data) :
       id, sent = self.sents[sid]
       print(id, ':', sent)
     print("")
+
+  def interact(self):
+    while True:
+      text = input("Query: ")
+      if not text: return
+      self.ask(text=text,interactive=True)
 
 
 ### TESTS ###

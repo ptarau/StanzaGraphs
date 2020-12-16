@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.datasets import make_classification
 from torch import nn
 import torch
-from skorch import NeuralNetClassifier
+import skorch
 from answerer import Data
 from sk_answerer import Trainer, Inferencer
 
@@ -53,10 +53,11 @@ class TorchClassifier :
 
     nets = [None] * l
     for i in range(l):
-      net = NeuralNetClassifier(
+      net = skorch.NeuralNetClassifier(
         ClassifierModule,
         max_epochs=self.max_epochs,
         lr=self.lr
+        #train_split=skorch.dataset.CVSplit(5, stratified=False)
         #     device='cuda',  # uncomment this to train with CUDA
       )
       nets[i] = net.fit(X, y[:, i],**fit_params)

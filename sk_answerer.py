@@ -8,6 +8,21 @@ class Trainer :
     self.classifier=RandomForestClassifier(n_estimators=100, n_jobs=16)
     self.classifier.fit(hot_X, hot_y)
 
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+
+class ScaledTrainer :
+  def __init__(self, hot_X,hot_y):
+    net = RandomForestClassifier(n_estimators=100, n_jobs=16)
+    pipe = Pipeline([
+      ('scale', StandardScaler()),
+      ('net', net),
+    ])
+    self.classifier=pipe
+
+    self.classifier.fit(hot_X, hot_y)
+
+
 
 class Inferencer(Query) :
   '''
@@ -20,11 +35,11 @@ class Inferencer(Query) :
     self.trainer=self.make_trainer(self.hot_X,self.hot_y)
 
   def make_trainer(self, X, y):
-      return Trainer(X, y)
+      return ScaledTrainer(X, y)
 
   def query(self,text=None):
     ''' answers queries based on model built by Trainer'''
-    if not text: text = input("Query:")
+    if not text: text = input("Query: ")
     else: print("Query:", text)
     self.nlp_engine.from_text(text)
     X=[]
@@ -43,6 +58,15 @@ class Inferencer(Query) :
     sids=[x for x in sids  if x!=None]
     self.show_answers(sids)
 
+  def interact(self):
+    while True:
+      text = input("Query: ")
+      if not text: return
+      self.query(text=text)
+
+
+
+
 def sktest() :
   i=Inferencer()
   print("\n\n")
@@ -55,4 +79,5 @@ def sktest() :
   i.query(text="What was in Roger's 1965 paper?")
 
 if __name__=="__main__" :
-  sktest()
+  #sktest()
+  Inferencer().interact()
