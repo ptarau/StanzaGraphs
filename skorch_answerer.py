@@ -1,68 +1,130 @@
-# NOT WORKING - multiple targets not enabled in skorch
-
 import numpy as np
 from sklearn.datasets import make_classification
 from torch import nn
-import torch.nn.functional as F
+import torch
+from skorch import NeuralNetClassifier
 from answerer import Data
+from sk_answerer import Trainer, Inferencer
 
-from skorch import NeuralNet, NeuralNetClassifier
+# JUST a PROOF OF CONCEPT -
+# skorch does not support (esily) multiple co-dependent outputs
+# to fix, most likely, we must override the torch forward method
+
+class ClassifierModule(nn.Module):
+  def __init__(
+      self,
+      num_units=32,
+      nonlin=torch.sigmoid,
+      dropout=0.5,
+  ):
+    super(ClassifierModule, self).__init__()
+    self.num_units = num_units
+    Xsize=ClassifierModule.Xsize
+    self.nonlin = nonlin
+    self.dropout = dropout
+
+    self.dense0 = nn.Linear(Xsize, num_units)
+    self.nonlin = nonlin
+    self.dropout = nn.Dropout(dropout)
+    self.dense1 = nn.Linear(num_units, num_units)
+    self.output = nn.Linear(num_units, 2)
+
+  def forward(self, X, **kwargs):
+    X = self.nonlin(self.dense0(X))
+    #X = self.dropout(X)
+    X = self.nonlin(self.dense1(X))
+    #X = self.dropout(X)
+    #X = self.nonlin(self.dense1(X))
+    X = torch.softmax(self.output(X), dim=-1)
+    return X
+
+class TorchClassifier :
+  def __init__(self,max_epochs=20,lr=0.05):
+    self.max_epochs=max_epochs
+    self.lr=lr
+
+  def fit(self,X,y,**fit_params):
+    X=X.astype(np.float32)
+    y=y.astype(np.int64)
+    ClassifierModule.Xsize = X.shape[-1]
+    ClassifierModule.ysize = y.shape[-1]
+
+    l=ClassifierModule.ysize
+
+    nets = [None] * l
+    for i in range(l):
+      net = NeuralNetClassifier(
+        ClassifierModule,
+        max_epochs=self.max_epochs,
+        lr=self.lr
+        #     device='cuda',  # uncomment this to train with CUDA
+      )
+      nets[i] = net.fit(X, y[:, i],**fit_params)
+
+    self.nets=nets
 
 
-def make_data() :
-  data=Data()
-  X=data.hot_X
-  y=data.hot_y
-  #return X,np.sum(y,axis=1)
-  return X,y
 
-X,y=make_data()
+  def predict_proba(self,X):
+    X = X.astype(np.float32)
+    l = ClassifierModule.ysize
+    nets = self.nets
+    p = [0] * l
+    # TODO - this is just a sketch - NOT RIGHT
+    for i in range(l):
+      p[i] = nets[i].predict_proba(X)
+      prob = np.sum(p, axis=-1)
+      prob = prob / l
+    #print(prob)
+    prob=np.array((prob,))
+    return prob
 
 
-#X, y = make_classification(1000, 20, n_informative=10, random_state=0)
-#print("X",X.shape,"y",y.shape)
+  def predict(self,X):
+    p=self.predict_proba(X)
+    y= p.argmax(axis= -1)
+    return y
 
+class SkorchTrainer :
+  def __init__(self, X,y,**kwargs):
+    self.classifier=TorchClassifier(**kwargs)
+    self.classifier.fit(X,y)
 
+class SkorchAnswerer(Inferencer) :
+  def __init__(self, fname='texts/english', lang='en'):
+    super().__init__(fname=fname, lang=lang)
+    #self.trainer = self.make_trainer(self.hot_X, self.hot_y)
 
-X = X.astype(np.float32)
-y = y.astype(np.int64)
+  def make_trainer(self, X, y):
+    return SkorchTrainer(X, y)
 
-print("X",X.shape,"y",y.shape)
+def old_test() :
+  def make_data():
+    data = Data()
+    X = data.hot_X
+    y = data.hot_y
+    X, y = X.astype(np.float32), y.astype(np.int64)
+    return X, y
 
-class MyModule(nn.Module):
-    def __init__(self, num_units=10, nonlin=F.relu):
-        super(MyModule, self).__init__()
+  clf = TorchClassifier()
+  X, y = make_data()
+  #X, y = X.astype(np.float32), y.astype(np.int64)
+  clf.fit(X,y)
+  prob=clf.predict(X)
+  print(prob)
 
-        self.dense0 = nn.Linear(X.shape[1], num_units)
-        self.nonlin = nonlin
-        self.dropout = nn.Dropout(0.5)
-        self.dense1 = nn.Linear(num_units, 10)
-        self.output = nn.Linear(10, 2)
-
-    def forward(self, X, **kwargs):
-        X = self.nonlin(self.dense0(X))
-        X = self.dropout(X)
-        X = F.relu(self.dense1(X))
-        X = F.softmax(self.output(X))
-        return X
-
-net = NeuralNet(
-    MyModule,
-    nn.CrossEntropyLoss,
-    #nn.MultiLabelMarginLoss,
-    max_epochs=20,
-    lr=0.1,
-    #batch_size=514,
-    # Shuffle training data on each epoch
-    iterator_train__shuffle=True,
-)
-
-def train(X,y) :
-  #net.fit(X, y[:,7])
-  net.fit(X, np.min(y,axis=1))
-  y_proba = net.predict_proba(X)
-  for x in y_proba : print(x)
+def atest() :
+  i = SkorchAnswerer()
+  print("\n\n")
+  print("ALGORITHMICALLY DERIVED ANSWERS:\n")
+  i.ask("What did about black holes?")
+  i.ask(text="What was in Roger's 1965 paper?")
+  print("\n")
+  print("NEURAL NET'S ANSWERS:\n")
+  i.query("What did Penrose show about black holes?")
+  i.query(text="What was in Roger's 1965 paper?")
 
 
 if __name__=="__main__" :
-  train(X,y)
+  #tntest()
+  atest()

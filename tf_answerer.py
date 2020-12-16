@@ -84,7 +84,7 @@ def ntest() :
   i=Inferencer()
   print("\n\n")
   print("ALGORITHMICALLY DERIVED ANSWERS:\n")
-  i.ask("What did about black holes?")
+  i.ask("What did Penrose show about black holes?")
   i.ask(text="What was in Roger's 1965 paper?")
   print("\n")
   print("NEURAL NET'S ANSWERS:\n")

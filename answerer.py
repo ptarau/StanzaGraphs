@@ -4,6 +4,7 @@ import csv
 from sklearn.preprocessing import OneHotEncoder
 import numpy as np
 from collections import defaultdict, Counter
+import math
 
 # turns .tsv file into list of lists
 def tsv2mat(fname) :
@@ -98,8 +99,10 @@ class Query(Data) :
 
     for id in c:
       shared=c[id]
-      jaccard=shared/(self.lens[id]+qlen-shared)
-      c[id]=jaccard
+      union_size=self.lens[id]+qlen-shared
+      #jaccard=shared/union_size
+      #c[id]=jaccard
+      c[id]=shared/math.log(union_size)
     print('\nHIT WEIGHTS:', c, "\n")
     best = c.most_common(k)
     for sid, _ in best:
