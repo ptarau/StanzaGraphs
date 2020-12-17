@@ -62,20 +62,28 @@ def  summarize_all(
       kname = keys + name + ".txt"
 
       ensure_path(tname)
-      pdf2txt(pdf, tname)
-      print('processing:', tname)
-      clean_text_file(tname, lang=lang)
-      nlp = NLP(lang=lang)
-      nlp.from_file(tname0)
-      kws, sents, _ = nlp.info(wk, sk)
+      try :
+        print('processing:', pdf)
+        pdf2txt(pdf, tname)
+        clean_text_file(tname, lang=lang)
+        nlp = NLP(lang=lang)
+        nlp.from_file(tname0)
+        kws, sents, _ = nlp.info(wk, sk)
 
-      ktext = "\n".join(kws)
+        ktext = "\n".join(kws)
+        ensure_path(kname)
+        string2file(ktext,kname)
 
-      stext = "\n".join(sents)
+        stext = "\n".join(sents)
+        ensure_path(sname)
+        string2file(stext,sname)
 
-      text = "\n".join(
-        ['FILE:', pdf, '\nKEYWORDS:', ktext, '\nSUMMARY:', stext, '\n'])
-      print(text,file=outf)
+        text = "\n".join(
+          ['FILE:', pdf, '\nKEYWORDS:', ktext, '\nSUMMARY:', stext, '\n'])
+        print(text,file=outf)
+      except :
+        print('processing failed on:', pdf)
+
 
 
 
