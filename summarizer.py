@@ -188,6 +188,8 @@ class NLP :
     print("\n")
     gshow(picg,file_name='pics/'+self.fname+'.gv')
 
+
+
 # read a file into a string text
 def file2text(fname) :
   with open(fname,'r') as f:
