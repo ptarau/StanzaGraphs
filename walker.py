@@ -13,7 +13,8 @@ def string2file(text,fname) :
   with open(fname,'w') as g:
     g.write(text)
 
-def clean_text_file(fname) :
+def clean_text_file(fname,lang='en') :
+  if lang!='en': return
   print('cleaning: '+fname)
   from nltk.tokenize import sent_tokenize, word_tokenize
   data = file2string(fname)
@@ -43,6 +44,7 @@ def  summarize_all(
     texts="out/pdftexts/",
     sums="out/sums/",
     keys="out/keys/",
+    lang='en',
     wk=8,
     sk=4) :
   trim=len(pdfs)
@@ -58,9 +60,9 @@ def  summarize_all(
 
     ensure_path(tname)
     pdf2txt(pdf,tname)
-    print(tname)
-    clean_text_file(tname)
-    nlp=NLP()
+    print('processing:',tname)
+    clean_text_file(tname,lang=lang)
+    nlp=NLP(lang=lang)
     nlp.from_file(tname0)
     kws,sents,_=nlp.info(wk,sk)
     print('KEYWORDS',kws)
