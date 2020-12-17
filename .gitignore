@@ -131,4 +131,6 @@ dmypy.json
 .idea/
 out/
 pics/
+pdfs/
+
 

@@ -1,6 +1,7 @@
 import glob
 import subprocess
 from summarizer import exists_file, ensure_path, NLP
+from nltk.tokenize import sent_tokenize, word_tokenize
 
 def pdf2txt(pdf,txt):
   subprocess.run(["pdftotext", "-q",pdf,txt])
@@ -15,8 +16,7 @@ def string2file(text,fname) :
 
 def clean_text_file(fname,lang='en') :
   if lang!='en': return
-  print('cleaning: '+fname)
-  from nltk.tokenize import sent_tokenize, word_tokenize
+  #print('cleaning: '+fname)
   data = file2string(fname)
   texts=sent_tokenize(data)
   clean=[]
@@ -36,39 +36,49 @@ def clean_text_file(fname,lang='en') :
   string2file(new_data,fname)
 
 def walk(dir="./"):
-  for filename in glob.iglob(dir + '**/**', recursive=True):
+  for filename in sorted(glob.iglob(dir + '**/**', recursive=True)):
      yield filename
 
 def  summarize_all(
     pdfs="pdfs/",
+    overview="out/overview.txt",
     texts="out/pdftexts/",
     sums="out/sums/",
     keys="out/keys/",
     lang='en',
     wk=8,
     sk=4) :
-  trim=len(pdfs)
-  for pdf in walk(dir=pdfs) :
-    if pdf[-4:].lower()!=".pdf" : continue
+  ensure_path(overview)
+  with open(overview,'w') as outf :
+    trim = len(pdfs)
+    for pdf in walk(dir=pdfs):
+      if pdf[-4:].lower() != ".pdf": continue
 
-    name=pdf[trim:-4]
+      name = pdf[trim:-4]
 
-    tname0 = texts + name
-    tname=texts+name+".txt"
-    sname = sums + name + ".txt"
-    kname = keys + name +".txt"
+      tname0 = texts + name
+      tname = texts + name + ".txt"
+      sname = sums + name + ".txt"
+      kname = keys + name + ".txt"
 
-    ensure_path(tname)
-    pdf2txt(pdf,tname)
-    print('processing:',tname)
-    clean_text_file(tname,lang=lang)
-    nlp=NLP(lang=lang)
-    nlp.from_file(tname0)
-    kws,sents,_=nlp.info(wk,sk)
-    print('KEYWORDS',kws)
-    print('')
-    print('SUMMARY',sents)
-    print('')
+      ensure_path(tname)
+      pdf2txt(pdf, tname)
+      print('processing:', tname)
+      clean_text_file(tname, lang=lang)
+      nlp = NLP(lang=lang)
+      nlp.from_file(tname0)
+      kws, sents, _ = nlp.info(wk, sk)
+
+      ktext = "\n".join(kws)
+
+      stext = "\n".join(sents)
+
+      text = "\n".join(
+        ['FILE:', pdf, '\nKEYWORDS:', ktext, '\nSUMMARY:', stext, '\n'])
+      print(text,file=outf)
+
+
 
 if __name__=="__main__":
   summarize_all()
+  #for x in walk() : print(x)
