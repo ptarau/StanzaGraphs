@@ -36,8 +36,48 @@ def clean_text_file(fname,lang='en') :
   string2file(new_data,fname)
 
 def walk(dir="./"):
-  for filename in sorted(glob.iglob(dir + '**/**', recursive=True)):
+  for filename in sorted(set(
+        glob.iglob(dir + '**/**', recursive=True))):
      yield filename
+
+
+
+def summarize_one(pdf,trim,texts,sums,keys,lang,wk,sk) :
+  if pdf[-4:].lower() != ".pdf": return None
+
+  name = pdf[trim:-4]
+
+  tname0 = texts + name
+  tname = texts + name + ".txt"
+  sname = sums + name + ".txt"
+  kname = keys + name + ".txt"
+
+  ensure_path(tname)
+  try:
+    print('processing:', pdf)
+    if not exists_file(tname) :
+      pdf2txt(pdf, tname)
+      clean_text_file(tname, lang=lang)
+
+    nlp = NLP(lang=lang)
+    nlp.from_file(tname0)
+    kws, sents, _ = nlp.info(wk, sk)
+
+    ktext = "\n".join(kws)
+    ensure_path(kname)
+    string2file(ktext, kname)
+
+    stext = "\n".join(sents)
+    ensure_path(sname)
+    string2file(stext, sname)
+
+    text = "\n".join(
+      ['FILE:', pdf, '\nSUMMARY:', stext, '\nKEYWORDS:', ktext, '\n'])
+
+    return text
+  except:
+    print('processing failed on:', pdf)
+    return None
 
 def  summarize_all(
     pdfs="pdfs/",
@@ -46,46 +86,17 @@ def  summarize_all(
     sums="out/sums/",
     keys="out/keys/",
     lang='en',
-    wk=8,
-    sk=4) :
+    wk=10,
+    sk=8) :
   ensure_path(overview)
   with open(overview,'w') as outf :
     trim = len(pdfs)
     for pdf in walk(dir=pdfs):
-      if pdf[-4:].lower() != ".pdf": continue
-
-      name = pdf[trim:-4]
-
-      tname0 = texts + name
-      tname = texts + name + ".txt"
-      sname = sums + name + ".txt"
-      kname = keys + name + ".txt"
-
-      ensure_path(tname)
-      try :
-        print('processing:', pdf)
-        pdf2txt(pdf, tname)
-        clean_text_file(tname, lang=lang)
-        nlp = NLP(lang=lang)
-        nlp.from_file(tname0)
-        kws, sents, _ = nlp.info(wk, sk)
-
-        ktext = "\n".join(kws)
-        ensure_path(kname)
-        string2file(ktext,kname)
-
-        stext = "\n".join(sents)
-        ensure_path(sname)
-        string2file(stext,sname)
-
-        text = "\n".join(
-          ['FILE:', pdf, '\nKEYWORDS:', ktext, '\nSUMMARY:', stext, '\n'])
-        print(text,file=outf)
-      except :
-        print('processing failed on:', pdf)
-
-
-
+      text=summarize_one(pdf, trim, texts, sums, keys, lang, wk, sk)
+      if not text : continue
+      print(text, file=outf)
+      #print(text)
+      #break
 
 if __name__=="__main__":
   summarize_all()
