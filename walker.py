@@ -127,7 +127,7 @@ def parsum_all(
     trim = len(pdfs)
     fs=[pdf for pdf in walk(dir=pdfs) if pdf[-4:].lower() == ".pdf"]
     l=len(fs)
-    chunksize=max(1,l/(count*count))
+    chunksize=max(1,int(l/(4*count)))
     print('pdf files:',l,'processes:',count,'chunksize:',chunksize)
     args=[(pdf,trim, texts, sums, keys, lang, wk, sk) for pdf in fs]
     ensure_path(overview)
@@ -140,5 +140,5 @@ if __name__=="__main__":
   print('MAKE SURE you have created  "pdfs/" directory with ".pdf" files in it')
   print('OR that you give the path of a directory where pdfs/ is a subdirectory')
   #for x in walk('pdfs/') : print(x)
-  summarize_all(rootdir=None)
-  
+  #summarize_all(rootdir=None)
+  parsum_all(rootdir="/Users/tarau/Desktop/sit/GRAPHSTAX/",pdfs="biblion/")

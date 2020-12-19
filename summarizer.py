@@ -48,6 +48,7 @@ class NLP :
   information retrieval tasks
   '''
   def __init__(self,lang='en'):
+    self.lang=lang
     if not exists_file(home_dir()+'/stanza_resources/'+lang):
       stanza.download(lang)
     self.nlp = stanza.Pipeline(lang=lang,logging_level='WARN')
@@ -66,7 +67,9 @@ class NLP :
 
   def keynoun(self,x):
     '''true for "important" nouns'''
-    return  x.upos == 'NOUN' and ('subj' in x.deprel or 'ob' in x.deprel)
+    ok = x.upos == 'NOUN' and ('subj' in x.deprel or 'ob' in x.deprel)
+    if self.lang=='en' : ok=ok and len(x.lemma)>3
+    return ok
 
   def facts(self):
     '''generates <from,link,to,sentence_id> tuples'''
@@ -86,7 +89,6 @@ class NLP :
           yield hw.lemma, hw.upos + "inCOMPOUND", comp, sid
           yield (sid, 'ABOUT', comp, sid)
 
-
     for sid,sent in enumerate(self.doc.sentences) :
       for x in sent.words :
         yield from fact(x,sent,sid)
@@ -101,6 +103,10 @@ class NLP :
     return ns
 
   def context_dict(self):
+    """
+    returns contexts in which nouns and adjectives
+    occur as constiguous lemmas as part of a phrase
+    """
     contexts=defaultdict(list)
     for sid,sent in enumerate(self.doc.sentences):
       ws=list(sent.words)
@@ -130,7 +136,7 @@ class NLP :
       sid, ws = pair
       r = sum(ranks[x] for x in ws if x in ranks)
       #print('!!!sum', r)
-      r = r * ranks[sid]
+      r = r * (ranks[sid]/(1+len(ws)))
       #print('!!!prod', r)
       return (r, ws)
 
@@ -145,7 +151,7 @@ class NLP :
     ns=self.keynouns()
     contexts = self.context_dict()
 
-    kwds,sids,picg=ranks2info(g,ranks,self.doc.sentences,ns,wk,sk)
+    kwds,sids,picg=ranks2info(g,ranks,self.doc.sentences,ns,wk,sk,self.lang)
     kwds=set(map(extend_kwd,kwds))
 
     sents=list(map(self.get_sent,sorted(sids)))
@@ -205,10 +211,12 @@ def facts2nx(fgen) :
      g.add_edge(f,t)
    return g
 
-def good_sent(x) :
+def good_sent(x,lang) :
+  if lang!='en' : return True
   if len(x) < 10: return False
-  if not x[-1] in ".?!" : return False
-  bad=sum(1 for c in x if x.isdigit() or x in "@#$%^&*()[]{}-=+_;':<>/\|")
+  if not x[-1] in "." : return False
+  if not x[0].isupper() : return False
+  bad=sum(1 for c in x if x.isdigit() or x in "@#$%^&*()[]{}-=+_;':<>/\|~.")
   if bad>len(x)/ 10:
     #print('!!!!', bad, x)
     return False
@@ -216,10 +224,11 @@ def good_sent(x) :
 
 # uses rank dictionary to extract salient
 # sentences and keywords
-def ranks2info(g,ranks,sents,keyns,wk,sk) :
+def ranks2info(g,ranks,sents,keyns,wk,sk,lang) :
   ranked=sorted(ranks.items(),key=(lambda x: x[1]),reverse=True)
   sids=[]
   kwds=[]
+
   for x, r in ranked:
     if wk<=0 : break
     if isinstance(x,str) and x in keyns:
@@ -229,7 +238,7 @@ def ranks2info(g,ranks,sents,keyns,wk,sk) :
     if sk <= 0: break
     if isinstance(x, int):
       text=sents[x].text
-      if good_sent(text) :
+      if good_sent(text,lang) :
         sids.append(x)
         sk -= 1
 
@@ -238,7 +247,6 @@ def ranks2info(g,ranks,sents,keyns,wk,sk) :
   good = [x for (x,r) in ranked
           if isinstance(x,str)
              and "'" not in x
-             and len(x)>3
              and (r>minr or x in keyns)]
   picg = nx.DiGraph()
   for (x,y) in g.edges() :
