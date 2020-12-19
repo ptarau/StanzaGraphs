@@ -2,6 +2,7 @@ import glob
 import subprocess
 from summarizer import exists_file, ensure_path, NLP
 from nltk.tokenize import sent_tokenize, word_tokenize
+from multiprocessing import Process, Pool, cpu_count
 
 def pdf2txt(pdf,txt):
   subprocess.run(["pdftotext", "-q",pdf,txt])
@@ -98,6 +99,34 @@ def  summarize_all(
       #print(text)
       #break
 
+def sum_one(args) :
+  return summarize_one(*args)
+
+
+def parsum_all(
+    pdfs="pdfs/",
+    overview="out/overview.txt",
+    texts="out/pdftexts/",
+    sums="out/sums/",
+    keys="out/keys/",
+    lang='en',
+    wk=10,
+    sk=8):
+  count = cpu_count() // 2
+  with Pool(processes=count) as pool:
+    trim = len(pdfs)
+    fs=[pdf for pdf in walk(dir=pdfs) if pdf[-4:].lower() == ".pdf"]
+    l=len(fs)
+    chunksize=max(1,l/(count*count))
+    print('pdf files:',l,'processes:',count,'chunksize:',chunksize)
+    args=[(pdf,trim, texts, sums, keys, lang, wk, sk) for pdf in fs]
+    with open(overview,'w') as outf:
+      for text in pool.imap_unordered(sum_one,args,chunksize=chunksize):
+        if text:
+          print(text,file=outf)
+
 if __name__=="__main__":
-  summarize_all()
+  print('MAKE SURE you have created  "pdfs/" directory with ".pdf" files in it')
   #for x in walk() : print(x)
+  #summarize_all()
+  parsum_all()

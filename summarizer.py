@@ -121,7 +121,7 @@ class NLP :
     return contexts
 
 
-  def info(self,wk=8,sk=6,ranker=subg):
+  def info(self,wk=8,sk=6,ranker=pagerank):
     '''extract keywords and summary sentences'''
     g = self.to_nx()
     ranks = rank_with(ranker, g)
@@ -147,10 +147,12 @@ class NLP :
     contexts = self.context_dict()
     #print('!!!', len(contexts))
 
-    kwds,sids,picg=ranks2info(g,ranks,ns,wk,sk)
+    #print('!!!',self.sentences())
+    kwds,sids,picg=ranks2info(g,ranks,self.doc.sentences,ns,wk,sk)
     kwds=set(map(extend_kwd,kwds))
 
     sents=list(map(self.get_sent,sorted(sids)))
+
     return kwds,sents,picg
 
   def to_nx(self): # converts to networkx graph
@@ -208,7 +210,7 @@ def facts2nx(fgen) :
 
 # uses rank dictionary to extract salient
 # sentences and keywords
-def ranks2info(g,ranks,keyns,wk,sk) :
+def ranks2info(g,ranks,sents,keyns,wk,sk) :
   ranked=sorted(ranks.items(),key=(lambda x: x[1]),reverse=True)
   sids=[]
   kwds=[]
@@ -220,14 +222,16 @@ def ranks2info(g,ranks,keyns,wk,sk) :
   for x,r in ranked:
     if sk <= 0: break
     if isinstance(x, int):
-      sids.append(x)
-      sk -= 1
+      text=sents[x].text
+      if len(text)>10:
+        sids.append(x)
+        sk -= 1
 
   _,minr=ranked[(len(ranked)-1)//4]
   good = [x for (x,r) in ranked
           if isinstance(x,str)
-             #and x.isalpha()
-             and len(x)>1
+             and "'" not in x
+             and len(x)>3
              and (r>minr or x in keyns)]
   picg = nx.DiGraph()
   for (x,y) in g.edges() :
@@ -281,6 +285,6 @@ def test(fname='texts/english',lang='en') :
 
 if __name__=="__main__" :
   test(fname='texts/english',lang='en')
-  test(fname='texts/spanish',lang='es')
-  test(fname='texts/chinese',lang='zh-hans')
-  test(fname='texts/russian',lang='ru')
+  #test(fname='texts/spanish',lang='es')
+  #test(fname='texts/chinese',lang='zh-hans')
+  #test(fname='texts/russian',lang='ru')
