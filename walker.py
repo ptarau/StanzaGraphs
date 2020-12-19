@@ -1,4 +1,5 @@
 import glob
+import os
 import subprocess
 from summarizer import exists_file, ensure_path, NLP
 from nltk.tokenize import sent_tokenize, word_tokenize
@@ -41,8 +42,6 @@ def walk(dir="./"):
         glob.iglob(dir + '**/**', recursive=True))):
      yield filename
 
-
-
 def summarize_one(pdf,trim,texts,sums,keys,lang,wk,sk) :
   if pdf[-4:].lower() != ".pdf": return None
 
@@ -81,6 +80,7 @@ def summarize_one(pdf,trim,texts,sums,keys,lang,wk,sk) :
     return None
 
 def  summarize_all(
+    rootdir=None,
     pdfs="pdfs/",
     overview="out/overview.txt",
     texts="out/pdftexts/",
@@ -89,6 +89,10 @@ def  summarize_all(
     lang='en',
     wk=10,
     sk=8) :
+  if rootdir:
+    rootdir=os.path.abspath(rootdir)+"/"
+    names=(pdfs,overview,texts,sums,keys)
+    pdfs,overview,texts,sums,keys=tuple(rootdir+x for x in names)
   ensure_path(overview)
   with open(overview,'w') as outf :
     trim = len(pdfs)
@@ -104,6 +108,7 @@ def sum_one(args) :
 
 
 def parsum_all(
+    rootdir=None,
     pdfs="pdfs/",
     overview="out/overview.txt",
     texts="out/pdftexts/",
@@ -112,6 +117,11 @@ def parsum_all(
     lang='en',
     wk=10,
     sk=8):
+  if rootdir:
+    rootdir=os.path.abspath(rootdir)+"/"
+    names=(pdfs,overview,texts,sums,keys)
+    pdfs,overview,texts,sums,keys=tuple(rootdir+x for x in names)
+
   count = cpu_count() // 2
   with Pool(processes=count) as pool:
     trim = len(pdfs)
@@ -120,6 +130,7 @@ def parsum_all(
     chunksize=max(1,l/(count*count))
     print('pdf files:',l,'processes:',count,'chunksize:',chunksize)
     args=[(pdf,trim, texts, sums, keys, lang, wk, sk) for pdf in fs]
+    ensure_path(overview)
     with open(overview,'w') as outf:
       for text in pool.imap(sum_one,args,chunksize=chunksize):
         if text:
@@ -127,6 +138,7 @@ def parsum_all(
 
 if __name__=="__main__":
   print('MAKE SURE you have created  "pdfs/" directory with ".pdf" files in it')
-  #for x in walk() : print(x)
-  #summarize_all()
-  parsum_all()
+  print('OR that you give the path of a directory where pdfs/ is a subdirectory')
+  #for x in walk('pdfs/') : print(x)
+  summarize_all(rootdir=None)
+  

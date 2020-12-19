@@ -143,11 +143,8 @@ class NLP :
       return phrase
 
     ns=self.keynouns()
-
     contexts = self.context_dict()
-    #print('!!!', len(contexts))
 
-    #print('!!!',self.sentences())
     kwds,sids,picg=ranks2info(g,ranks,self.doc.sentences,ns,wk,sk)
     kwds=set(map(extend_kwd,kwds))
 
@@ -208,6 +205,15 @@ def facts2nx(fgen) :
      g.add_edge(f,t)
    return g
 
+def good_sent(x) :
+  if len(x) < 10: return False
+  if not x[-1] in ".?!" : return False
+  bad=sum(1 for c in x if x.isdigit() or x in "@#$%^&*()[]{}-=+_;':<>/\|")
+  if bad>len(x)/ 10:
+    #print('!!!!', bad, x)
+    return False
+  return True
+
 # uses rank dictionary to extract salient
 # sentences and keywords
 def ranks2info(g,ranks,sents,keyns,wk,sk) :
@@ -223,10 +229,11 @@ def ranks2info(g,ranks,sents,keyns,wk,sk) :
     if sk <= 0: break
     if isinstance(x, int):
       text=sents[x].text
-      if len(text)>10:
+      if good_sent(text) :
         sids.append(x)
         sk -= 1
 
+  # visualize
   _,minr=ranked[(len(ranked)-1)//4]
   good = [x for (x,r) in ranked
           if isinstance(x,str)
@@ -285,6 +292,6 @@ def test(fname='texts/english',lang='en') :
 
 if __name__=="__main__" :
   test(fname='texts/english',lang='en')
-  #test(fname='texts/spanish',lang='es')
-  #test(fname='texts/chinese',lang='zh-hans')
-  #test(fname='texts/russian',lang='ru')
+  test(fname='texts/spanish',lang='es')
+  test(fname='texts/chinese',lang='zh-hans')
+  test(fname='texts/russian',lang='ru')
