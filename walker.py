@@ -121,7 +121,7 @@ def parsum_all(
     print('pdf files:',l,'processes:',count,'chunksize:',chunksize)
     args=[(pdf,trim, texts, sums, keys, lang, wk, sk) for pdf in fs]
     with open(overview,'w') as outf:
-      for text in pool.imap_unordered(sum_one,args,chunksize=chunksize):
+      for text in pool.imap(sum_one,args,chunksize=chunksize):
         if text:
           print(text,file=outf)
 
