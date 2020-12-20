@@ -53,8 +53,8 @@ class Inferencer(Query) :
     else: print("Query:", text)
     self.nlp_engine.from_text(text)
     X=[]
-    for f, r, t, _ in self.nlp_engine.facts():
-      X.append([f,r,t])
+    for f, ff, r, t, tt, _ in self.nlp_engine.facts():
+      X.append([f,tt,r,tt,t])
     X = np.array(X)
     hot_X = self.enc_X.transform(X).toarray()
     y=self.model.predict(hot_X)

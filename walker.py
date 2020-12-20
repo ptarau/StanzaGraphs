@@ -1,5 +1,6 @@
 import glob
 import os
+import sys
 import subprocess
 from summarizer import exists_file, ensure_path, NLP
 from nltk.tokenize import sent_tokenize, word_tokenize
@@ -43,6 +44,7 @@ def walk(dir="./"):
      yield filename
 
 def summarize_one(pdf,trim,texts,sums,keys,lang,wk,sk) :
+  ''' summarizer for one document'''
   if pdf[-4:].lower() != ".pdf": return None
 
   name = pdf[trim:-4]
@@ -76,6 +78,7 @@ def summarize_one(pdf,trim,texts,sums,keys,lang,wk,sk) :
 
     return text
   except:
+    print('ERROR:',sys.exc_info()[0])
     print('processing failed on:', pdf)
     return None
 
@@ -89,6 +92,7 @@ def  summarize_all(
     lang='en',
     wk=10,
     sk=8) :
+  """ sequential summarizer"""
   if rootdir:
     rootdir=os.path.abspath(rootdir)+"/"
     names=(pdfs,overview,texts,sums,keys)
@@ -117,6 +121,7 @@ def parsum_all(
     lang='en',
     wk=10,
     sk=8):
+  """ parallel summarizer"""
   if rootdir:
     rootdir=os.path.abspath(rootdir)+"/"
     names=(pdfs,overview,texts,sums,keys)
@@ -140,5 +145,5 @@ if __name__=="__main__":
   print('MAKE SURE you have created  "pdfs/" directory with ".pdf" files in it')
   print('OR that you give the path of a directory where pdfs/ is a subdirectory')
   #for x in walk('pdfs/') : print(x)
-  #summarize_all(rootdir=None)
-  parsum_all(rootdir="/Users/tarau/Desktop/sit/GRAPHSTAX/",pdfs="biblion/")
+  summarize_all(rootdir=None)
+  #parsum_all(rootdir="/Users/tarau/Desktop/sit/GRAPHSTAX/",pdfs="biblion/")

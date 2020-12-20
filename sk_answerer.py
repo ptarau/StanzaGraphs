@@ -43,8 +43,8 @@ class Inferencer(Query) :
     else: print("Query:", text)
     self.nlp_engine.from_text(text)
     X=[]
-    for f, r, t, _ in self.nlp_engine.facts():
-      X.append([f,r,t])
+    for f,ff,r,tt,t,_ in self.nlp_engine.facts():
+      X.append([f,ff,r,tt,t])
     X = np.array(X)
 
     hot_X = self.enc_X.transform(X).toarray()
@@ -79,5 +79,5 @@ def sktest() :
   i.query(text="What was in Roger's 1965 paper?")
 
 if __name__=="__main__" :
-  #sktest()
-  Inferencer().interact()
+  sktest()
+  #Inferencer().interact()

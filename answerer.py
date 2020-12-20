@@ -25,15 +25,16 @@ class Data :
       nlp.process_file(fname=fname,lang=lang)
 
     wss = tsv2mat(edge_file)
+
     self.sents=tsv2mat("out/"+fname+"_sents.tsv")
     occs=defaultdict(set)
     sids=set()
     lens=[]
-    for f,r,t,id in wss:
+    for f,ff,r,tt,t,id in wss:
       id=int(id)
       if len(lens)<=id : lens.append(0)
       lens[id]+=1
-      occs[(f,r,t)].add(id)
+      occs[(f,ff,r,tt,t)].add(id)
       sids.add(id)
     self.occs=occs # dict where edges occur
     self.lens=lens # number of edges in each sentence
@@ -65,7 +66,7 @@ class Data :
     self.hot_X=hot_X
     self.hot_y =hot_y
 
-    print('\nFINAL DTATA SHAPES','X',hot_X.shape,'y',hot_y.shape,'\n')
+    print('\nFINAL DTATA SHAPES','X',hot_X.shape,'y',hot_y.shape)
     #print('SENTENCE LENGTHS',lens)
 
 class Query(Data) :
@@ -85,12 +86,13 @@ class Query(Data) :
     then select the most similar ones
     '''
     if not text: text = input("Query:")
-    elif interactive: print("Query:",text)
+    elif not interactive: print("Query:",text)
 
     self.nlp_engine.from_text(text)
     sids=[]
-    for f,r,t,_ in self.nlp_engine.facts() :
-      sids.extend(self.occs.get((f,r,t),[]))
+
+    for f,ff,r,tt,t,_ in self.nlp_engine.facts() :
+      sids.extend(self.occs.get((f,ff,r,tt,t),[]))
     self.show_answers(sids)
 
   def show_answers(self, sids, k=3):
@@ -141,7 +143,7 @@ def dtests():
 def atest() :
   ''' tests symbolic and neural QA on given document '''
   i=Query()
-  print("\n\n")
+  print("\n")
   print("ALGORITHMICALLY DERIVED ANSWERS:\n")
   i.ask("What did Penrose show about black holes?")
   i.ask(text="What was in Roger's 1965 paper?")
