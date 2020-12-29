@@ -68,7 +68,8 @@ class NLP :
 
   def keynoun(self,x):
     '''true for "important" nouns'''
-    ok = x.upos == 'NOUN' and ('subj' in x.deprel or 'ob' in x.deprel)
+    ok = x.upos in ('NOUN','PROPN') and \
+         ('subj' in x.deprel or 'ob' in x.deprel)
     if self.lang=='en' : ok=ok and len(x.lemma)>3
     return ok
 
