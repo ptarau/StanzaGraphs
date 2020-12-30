@@ -1,11 +1,11 @@
 from natlog.natlog import *
 from natlog.db import *
-from natlog.parser import parse
+#from natlog.parser import parse
 #from natlog.scanner import Int
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neural_network import MLPClassifier
 
-from answerer import tsv2mat
+#from answerer import tsv2mat
 import numpy as np
 from sklearn.preprocessing import OneHotEncoder
 
@@ -13,11 +13,12 @@ from sklearn.preprocessing import OneHotEncoder
 
 def tsv2db(fname='out/texts/english.tsv'):
   rels=db()
-  wss = tsv2mat(fname)
-  for ws in wss: rels.add_db_clause(ws)
-  #rels.load_tsv(fname)
+  #wss = tsv2mat(fname)
+  #for ws in wss: rels.add_db_clause(ws)
+  rels.load_tsv(fname)
   return rels
 
+'''
 def wss2hotXy(wss,io_split = -1) :
   Xy=np.array(wss)
   X=Xy[:,:io_split]
@@ -36,6 +37,7 @@ def wss2hotXy(wss,io_split = -1) :
   #coldX=enc.inverse_transform(hotX)
   #print(coldX[0])
   return enc,hotX,enc_,hoty
+'''
 
 def wss2hotX(wss,mask) :
   mask=[mask]*len(wss[0])
@@ -47,15 +49,15 @@ def wss2hotX(wss,mask) :
   hotX=enc.transform(X).toarray()
   return enc,X,hotX
 
-rf_learner=RandomForestClassifier(random_state=1234)
-nn_learner=MLPClassifier(hidden_layer_sizes=(128,64,128))
+#learner=RandomForestClassifier(random_state=1234)
+learner=MLPClassifier(hidden_layer_sizes=(128,64,128))
 
 class natlearner(natlog) :
   def __init__(self,
                text=None,
                file_name=None,
                tsv_file='out/texts/english.tsv',
-               learner=nn_learner
+               learner=learner
                ):
     if not text and not file_name : text = ""
     super().__init__(text=text,file_name=file_name)

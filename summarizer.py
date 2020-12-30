@@ -77,19 +77,19 @@ class NLP :
     '''generates <from,link,to,sentence_id> tuples'''
     def fact(x,sent,sid) :
       if x.head==0 :
-        yield x.lemma,x.upos,'PREDICATE_OF','SENT',sid,sid
+        yield x.lemma,  x.upos,'PREDICATE_OF','SENT',    sid,sid
       else :
         hw=sent.words[x.head-1]
         if self.keynoun(x) : # reverse link to prioritize key nouns
-          yield hw.lemma, hw.upos,"rev_"+x.deprel, x.upos, x.lemma, sid
-          yield (sid, 'SENT', 'ABOUT',x.upos, x.lemma, sid)
+          yield hw.lemma,  hw.upos,"rev_"+x.deprel, x.upos,  x.lemma, sid
+          yield (sid,   'SENT', 'ABOUT',x.upos,              x.lemma, sid)
         else:
-          yield x.lemma,x.upos,x.deprel,hw.upos,hw.lemma,sid
+          yield x.lemma,  x.upos,x.deprel,hw.upos,  hw.lemma,sid
         if  x.deprel in ("compound","flat") :
           comp = x.lemma+" "+hw.lemma
-          yield x.lemma, x.upos,'IN', 'COMP', comp, sid
-          yield hw.lemma, hw.upos, 'IN', 'COMP', comp, sid
-          yield (sid, 'SENT', 'ABOUT', 'COMP', comp, sid)
+          yield x.lemma,   x.upos,'IN', 'COMP',      comp, sid
+          yield hw.lemma,   hw.upos, 'IN', 'COMP',   comp, sid
+          yield (sid,   'SENT', 'ABOUT', 'COMP',     comp, sid)
 
     for sid,sent in enumerate(self.doc.sentences) :
       for x in sent.words :
@@ -133,12 +133,14 @@ class NLP :
     '''extract keywords and summary sentences'''
     g = self.to_nx()
     ranks = rank_with(ranker, g)
+    #print('@@@@@',ranks)
 
     def rank_phrase(pair):
       sid, ws = pair
       if not sid in ranks : return 0,ws
       r = sum(ranks[x] for x in ws if x in ranks)
       r = r * (ranks[sid]/(1+math.log(1+len(ws))))
+      #r=ranks[sid]
       return (r, ws)
 
     def extend_kwd(w):
@@ -153,7 +155,9 @@ class NLP :
     contexts = self.context_dict()
 
     kwds,sids,picg=ranks2info(g,ranks,self.doc.sentences,ns,wk,sk,self.lang)
-    kwds=set(map(extend_kwd,kwds))
+    kwds=map(extend_kwd,kwds)
+    kwds=dict((k,1) for k in kwds) # ordered set emulation by (now) ordered dict
+    kwds=list(kwds) #[k for k in kwds]
 
     sents=list(map(self.get_sent,sorted(sids)))
 
@@ -208,7 +212,7 @@ def facts2nx(fgen) :
    sentence they originate from
    '''
    g=nx.DiGraph()
-   for f,ff,rel,t,tt,id in fgen :
+   for f,  ff,rel,tt, t,id in fgen :
      g.add_edge(f,t)
    return g
 
@@ -301,6 +305,7 @@ def test(fname='texts/english',lang='en') :
 
 if __name__=="__main__" :
   test(fname='texts/english',lang='en')
-  test(fname='texts/spanish',lang='es')
-  test(fname='texts/chinese',lang='zh-hans')
-  test(fname='texts/russian',lang='ru')
+  test(fname='texts/cosmo', lang='en')
+  #test(fname='texts/spanish',lang='es')
+  #test(fname='texts/chinese',lang='zh-hans')
+  #test(fname='texts/russian',lang='ru')
