@@ -310,6 +310,6 @@ def test(fname='texts/english',lang='en') :
 if __name__=="__main__" :
   test(fname='texts/english',lang='en')
   test(fname='texts/cosmo', lang='en')
-  #test(fname='texts/spanish',lang='es')
-  #test(fname='texts/chinese',lang='zh-hans')
-  #test(fname='texts/russian',lang='ru')
+  test(fname='texts/spanish',lang='es')
+  test(fname='texts/chinese',lang='zh-hans')
+  test(fname='texts/russian',lang='ru')
