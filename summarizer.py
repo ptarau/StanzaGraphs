@@ -75,6 +75,7 @@ class NLP :
 
   def facts(self):
     '''generates <from,link,to,sentence_id> tuples'''
+    first_occ=dict()
     def fact(x,sent,sid) :
       if x.head==0 :
         yield x.lemma,  x.upos,'PREDICATE_OF','SENT',    sid,sid
@@ -83,6 +84,9 @@ class NLP :
         if self.keynoun(x) : # reverse link to prioritize key nouns
           yield hw.lemma,  hw.upos,"rev_"+x.deprel, x.upos,  x.lemma, sid
           yield (sid,   'SENT', 'ABOUT',x.upos,              x.lemma, sid)
+          if not x.lemma in first_occ :
+            first_occ[(x.lemma,x.upos)]=sid
+            yield (x.lemma,  x.upos,'DEFINED_IN','SENT', sid,  sid)
         else:
           yield x.lemma,  x.upos,x.deprel,hw.upos,  hw.lemma,sid
         if  x.deprel in ("compound","flat") :
