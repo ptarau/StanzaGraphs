@@ -3,7 +3,7 @@ import csv
 import os
 import math
 import networkx as nx
-from visualizer import gshow,xshow
+from visualizer import gshow
 
 from collections import defaultdict
 
@@ -95,9 +95,9 @@ class NLP :
           yield hw.lemma,   hw.upos, 'IN', 'COMP',   comp, sid
           yield (sid,   'SENT', 'ABOUT', 'COMP',     comp, sid)
 
-    for sid,sent in enumerate(self.doc.sentences) :
-      for x in sent.words :
-        yield from fact(x,sent,sid)
+    for sent_id,sentence in enumerate(self.doc.sentences) :
+      for word in sentence.words :
+        yield from fact(word,sentence,sent_id)
 
   def keynouns(self):
     '''collects important nouns'''
@@ -170,7 +170,7 @@ class NLP :
   def to_nx(self): # converts to networkx graph
     return facts2nx(self.facts())
 
-  def show(self,k=20):
+  def show(self):
     ''' visualize  nodes and edges'''
     g = self.to_nx()
     gshow(g,file_name="pics/"+self.fname+".gv")
@@ -216,7 +216,7 @@ def facts2nx(fgen) :
    sentence they originate from
    '''
    g=nx.DiGraph()
-   for f,  ff,rel,tt, t,id in fgen :
+   for f,  ff,rel,tt, t,sid in fgen :
      g.add_edge(f,t)
    return g
 
@@ -225,7 +225,7 @@ def good_sent(x,lang) :
   if len(x) < 10: return False
   if not x[-1] in "." : return False
   if not x[0].isupper() : return False
-  bad=sum(1 for c in x if x.isdigit() or x in "@#$%^&*()[]{}-=+_;':<>/\|~.")
+  bad=sum(1 for _ in x if x.isdigit() or x in "@#$%^&*()[]{}-=+_;':<>/\|~.")
   if bad>len(x)/ 10:
     #print('!!!!', bad, x)
     return False
@@ -234,7 +234,7 @@ def good_sent(x,lang) :
 # uses rank dictionary to extract salient
 # sentences and keywords
 def ranks2info(g,ranks,sents,keyns,wk,sk,lang) :
-  ranked=sorted(ranks.items(),key=(lambda x: x[1]),reverse=True)
+  ranked=sorted(ranks.items(),key=(lambda v: v[1]),reverse=True)
   sids=[]
   kwds=[]
 
@@ -288,8 +288,8 @@ def home_dir() :
   return str(Path.home())
 
 def ensure_path(fname) :
-  dir,_=os.path.split(fname)
-  os.makedirs(dir, exist_ok=True)
+  folder,_=os.path.split(fname)
+  os.makedirs(folder, exist_ok=True)
 
 
 def process_file(fname='texts/english',lang='en') :
