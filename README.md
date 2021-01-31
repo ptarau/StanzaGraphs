@@ -15,17 +15,21 @@ A simple tensorflow keras based neural network implements a Trainer and an Infer
 
 A simple symbolic algorithm defines a baseline for answering questions related to a given text document (in folder ```texts```) that has been processsed. A simple keras-based neural network is also included for the same task.
 
+A proof-of-concept **streamlit** Web application is in file ```webapp.py```. You can run it as shwon in the script: 
+
+```webapp.sh```
+
 Before running, do:
 
-pip3 install -U stanza
+```pip3 install -U stanza```
 
 On the first run for a given language, a model (about 1GB) is downloaded,
-that might take a bit on slower networks. Once downloaded it goes in the
+that might take a bit on slower networks. Once downloaded it goes in your home directory, in the the folder:
 
-$HOME/stanza_resources/
+```stanza_resources/ ```
 
-directory. Also make sure dependencies in ```requirements.txt``` are all installed.
+Also make sure dependencies in ```requirements.txt``` are all installed.
 
-See more about stanza at:
+See more about **Stanza** at:
 
 https://github.com/stanfordnlp/stanza
