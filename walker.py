@@ -56,7 +56,7 @@ def summarize_one(pdf,trim,texts,sums,keys,lang,wk,sk) :
 
   ensure_path(tname)
   try:
-    print('processing:', pdf)
+    print('START processing:', pdf)
     if not exists_file(tname) :
       pdf2txt(pdf, tname)
       clean_text_file(tname, lang=lang)
@@ -72,10 +72,11 @@ def summarize_one(pdf,trim,texts,sums,keys,lang,wk,sk) :
     stext = "\n".join(sents)
     ensure_path(sname)
     string2file(stext, sname)
+    print('WRITTEN TO',sname,kname)
 
     text = "\n".join(
       ['FILE:', pdf, '\nSUMMARY:', stext, '\nKEYWORDS:', ktext, '\n'])
-
+    print('DONE processing:', pdf)
     return text
   except:
     print('ERROR:',sys.exc_info()[0])
@@ -127,12 +128,12 @@ def parsum_all(
     names=(pdfs,overview,texts,sums,keys)
     pdfs,overview,texts,sums,keys=tuple(rootdir+x for x in names)
 
-  count = cpu_count() // 2
+  count = max(2,cpu_count() // 3)
   with Pool(processes=count) as pool:
     trim = len(pdfs)
     fs=[pdf for pdf in walk(dir=pdfs) if pdf[-4:].lower() == ".pdf"]
     l=len(fs)
-    chunksize=max(1,int(l/(4*count)))
+    chunksize=1 #max(1,int(l/(4*count)))
     print('pdf files:',l,'processes:',count,'chunksize:',chunksize)
     args=[(pdf,trim, texts, sums, keys, lang, wk, sk) for pdf in fs]
     ensure_path(overview)
@@ -144,6 +145,12 @@ def parsum_all(
 if __name__=="__main__":
   print('MAKE SURE you have created  "pdfs/" directory with ".pdf" files in it')
   print('OR that you give the path of a directory where pdfs/ is a subdirectory')
-  #for x in walk('pdfs/') : print(x)
-  summarize_all(rootdir=None)
-  #parsum_all(rootdir="/Users/tarau/Desktop/sit/GRAPHSTAX/",pdfs="biblion/")
+
+  params=dict(
+    rootdir = "/Users/tarau/Desktop/sit/GRAPHSTAX/",
+    pdfs = "biblion/"
+  )
+  summarize_all()
+  #summarize_all(**params)
+  #parsum_all()
+  #parsum_all(**params)
