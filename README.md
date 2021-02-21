@@ -19,9 +19,16 @@ A proof-of-concept **streamlit** Web application is in file ```webapp.py```. You
 
 ```webapp.sh```
 
+##Setup
+
+This project requires 64 bit python 3.8 
+
 Before running, do:
 
 ```pip3 install -U stanza```
+
+You will also need to install pdftotext. This can be installed via pip
+or your package manager of choice
 
 On the first run for a given language, a model (about 1GB) is downloaded,
 that might take a bit on slower networks. Once downloaded it goes in your home directory, in the the folder:
@@ -33,3 +40,12 @@ Also make sure dependencies in ```requirements.txt``` are all installed.
 See more about **Stanza** at:
 
 https://github.com/stanfordnlp/stanza
+
+Linux and Mac users should have no issues but Windows users may require extra steps:
+
+* Installing pdftotext may require Microsoft Visual C++ Build Tools
+
+* Make sure to run python un UTF-8 mode either
+set the the environment variable ```PYTHONUTF8=1``` or use ```-Xutf8``` command line option.
+
+
