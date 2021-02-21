@@ -1,38 +1,53 @@
 import streamlit as st
 from summarizer import *
+import csv
 
 st.title('StanzaGraphs ')
 
-
-
-mes='''
-a Multilingual STANZA-based Summary and Keyword Extractor and Question-Answering System using TextGraphs and Neural Networks
+msg = '''
+A Multilingual STANZA-based Summary and Keyword Extractor and Question-Answering System using TextGraphs and Neural Networks
 '''
 
-st.sidebar.write(mes)
 
-lang=st.sidebar.selectbox('Language?',('English','Chinese'))
+def get_supported_langs(fname):
+    # returns dictionary supported languages. Key is language, and value is language code
+    langs = {}
+    with open(fname, 'r', newline='', encoding='utf-8') as f_langs:
+        reader = csv.DictReader(f_langs)
+        for row in reader:
+            langs[row['Language']] = row['Language code']
+    return langs
 
-if lang=='English':
-  lang='en'
-  fname='texts/english'
-else:
-  lang='zh-hans'
-  fname = 'texts/chinese'
 
-proceed = st.sidebar.button('Run with selected options!')
+notices = st.empty()
+SUPPORTED_LANGUAGES = get_supported_langs('StanzaSupportedLanguages.csv')
+st.sidebar.write(msg)
 
-def work(fname='texts/english',lang='en',wk=8, sk=5):
-  st.write('WORKING ON:',fname)
-  nlp = NLP(lang)
-  nlp.from_file(fname)
-  kws, sents, picg = nlp.info(wk, sk)
-  st.write("\nSUMMARY:")
-  for sent in sents: st.write(sent)
+text_file = st.sidebar.file_uploader('Input File', type=['txt'])
+selected_lang = st.sidebar.selectbox('Language', tuple(SUPPORTED_LANGUAGES.keys()), index=17)
 
-  st.sidebar.write("\nKEYWORDS:")
-  for w in kws: st.sidebar.write(w)
-  #gshow(picg, file_name='pics/' + self.fname + '.gv')
+lang = SUPPORTED_LANGUAGES[selected_lang]
+proceed = st.sidebar.button('Analyze!')
 
-if proceed :
-  work(fname=fname,lang=lang)
+
+def summarizer(input_text, lang='en', wk=8, sk=5):
+    notices.info("Analyzing text")
+    nlp = NLP(lang)
+    nlp.from_text(input_text)
+    kws, sents, picg = nlp.info(wk, sk)
+    st.header("\nSUMMARY")
+    for sent in sents:
+        st.write(sent)
+    st.header("Keywords")
+    st.write(', '.join(kws))
+    # gshow(picg, file_name='pics/' + self.fname + '.gv')
+    notices.empty()
+
+
+if proceed:
+    if text_file is not None:
+        text = text_file.getvalue().decode("utf-8")
+        summarizer(text, lang=lang)
+    else:
+        st.error("Please select a file to analyze")
+
