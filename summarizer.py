@@ -175,9 +175,11 @@ class NLP :
     g = self.to_nx()
     gshow(g,file_name="pics/"+self.fname+".gv")
 
-  def to_tsv(self): # writes out edges to .tsv file
-    facts2tsv(self.facts(),"out/"+self.fname+".tsv")
-    self.to_sents()
+  def to_tsv(self, fname=None): # writes out edges to .tsv file
+    if not fname:
+      fname = self.fname
+    facts2tsv(self.facts(),"out/"+fname+".tsv")
+    self.to_sents(fname=fname)
 
   def to_prolog(self): # writes out edges to Prolog file
     facts2prolog(self.facts(),"out/"+self.fname+".pro")
@@ -186,11 +188,13 @@ class NLP :
     return self.doc.sentences[sid].text
 
   # writes out sentences
-  def to_sents(self):
+  def to_sents(self, fname=None):
     def sent_gen() :
        for sid,sent in enumerate(self.doc.sentences):
          yield sid,sent.text
-    facts2tsv(sent_gen(),"out/"+self.fname+"_sents.tsv")
+    if not fname:
+      fname = self.fname
+    facts2tsv(sent_gen(),"out/"+fname+"_sents.tsv")
 
 
   def summarize(self,wk=8,sk=5) : # extract summary and keywords
@@ -206,7 +210,7 @@ class NLP :
 
 # read a file into a string text
 def file2text(fname) :
-  with open(fname,'r') as f:
+  with open(fname,'r', encoding='utf-8') as f:
     return f.read()
 
 def facts2nx(fgen) :
@@ -266,7 +270,7 @@ def ranks2info(g,ranks,sents,keyns,wk,sk,lang) :
 # writes out edge facts as .tsv file
 def facts2tsv(fgen,fname) :
   ensure_path(fname)
-  with open(fname, 'w', newline='') as f:
+  with open(fname, 'w', newline='', encoding='utf-8') as f:
     writer = csv.writer(f, delimiter='\t')
     for fact in fgen:
       writer.writerow(fact)
@@ -274,7 +278,7 @@ def facts2tsv(fgen,fname) :
 # writes out edge facts as Prolog file
 def facts2prolog(fgen,fname) :
   ensure_path(fname)
-  with open(fname, 'w') as f:
+  with open(fname, 'w', encoding='utf-8') as f:
     for fact in fgen:
       print('edge',end='',file=f)
       print(fact,end=".\n",file=f)
@@ -296,6 +300,13 @@ def process_file(fname='texts/english',lang='en') :
   nlp = NLP(lang)
   nlp.from_file(fname)
   nlp.to_tsv()
+  return nlp
+
+
+def process_text(fname, text, lang='en'):
+  nlp = NLP(lang)
+  nlp.from_text(text)
+  nlp.to_tsv(fname)
   return nlp
 
 # TESTS

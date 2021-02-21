@@ -8,7 +8,7 @@ import math
 
 # turns .tsv file into list of lists
 def tsv2mat(fname) :
-  with open(fname) as f:
+  with open(fname, encoding='utf-8') as f:
      wss = csv.reader(f, delimiter='\t')
      return list(wss)
 
@@ -19,10 +19,13 @@ class Data :
   links are of the form POS_deprel_POS with POS and deprel
   tags concatenated
   '''
-  def __init__(self,fname='texts/english',lang='en') :
+  def __init__(self,fname='texts/english', text=None, lang='en') :
     edge_file="out/"+fname+".tsv"
-    if not nlp.exists_file(edge_file) :
-      nlp.process_file(fname=fname,lang=lang)
+    if not nlp.exists_file(edge_file):
+      if text is not None:
+        nlp.process_text(fname=fname, text=text, lang=lang)
+      else:
+        nlp.process_file(fname=fname,lang=lang)
 
     wss = tsv2mat(edge_file)
 
@@ -75,9 +78,9 @@ class Query(Data) :
   text query and matches it against data to retrive
   sentences in which most of those edges occur
   '''
-  def __init__(self,fname='texts/english',lang='en'):
-    super().__init__(fname=fname,lang=lang)
-    self.nlp_engine=nlp.NLP()
+  def __init__(self,fname='texts/english', text=None, lang='en'):
+    super().__init__(fname=fname, text=text, lang=lang)
+    self.nlp_engine=nlp.NLP(lang)
 
   def ask(self,text=None,interactive=False):
     '''
@@ -86,16 +89,17 @@ class Query(Data) :
     then select the most similar ones
     '''
     if not text: text = input("Query:")
-    elif not interactive: print("Query:",text)
+    elif not interactive: print("Query:", text)
 
     self.nlp_engine.from_text(text)
     sids=[]
 
     for f,ff,r,tt,t,_ in self.nlp_engine.facts() :
       sids.extend(self.occs.get((f,ff,r,tt,t),[]))
-    self.show_answers(sids)
+    return self.show_answers(sids)
 
   def show_answers(self, sids, k=3):
+    output = []
     c = Counter(sids)
     qlen=len(list(self.nlp_engine.facts()))
 
@@ -110,7 +114,9 @@ class Query(Data) :
     for sid, _ in best:
       id, sent = self.sents[sid]
       print(id, ':', sent)
+      output.append(sent)
     print("")
+    return output
 
   def interact(self):
     while True:
