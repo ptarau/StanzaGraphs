@@ -13,13 +13,13 @@ into OneHotEncoded matrices, ready for use for machine learning tools as well as
 
 A simple tensorflow keras based neural network implements a Trainer and an Inferencer using these matrices in file ```tf_answerer.py```
 
-A simple symbolic algorithm defines a baseline for answering questions related to a given text document (in folder ```texts```) that has been processsed. A simple keras-based neural network is also included for the same task.
+A simple symbolic algorithm defines a baseline for answering questions related to a given text document (in folder ```texts```) that has been processed. A simple keras-based neural network is also included for the same task.
 
-A proof-of-concept **streamlit** Web application is in file ```webapp.py```. You can run it as shwon in the script: 
+A proof-of-concept **streamlit** Web application is in file ```webapp.py```. You can run it as shown in the script: 
 
 ```webapp.sh```
 
-##Setup
+## Setup
 
 This project requires 64 bit python 3.8 
 
@@ -27,7 +27,7 @@ Before running, do:
 
 ```pip3 install -U stanza```
 
-You will also need to install pdftotext. This can be installed via pip
+For ```walker.py``` you will also need to install pdftotext. This can be installed via pip
 or your package manager of choice
 
 On the first run for a given language, a model (about 1GB) is downloaded,
