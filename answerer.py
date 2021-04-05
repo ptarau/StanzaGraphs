@@ -1,10 +1,11 @@
 import summarizer as nlp
-
 import csv
 from sklearn.preprocessing import OneHotEncoder
 import numpy as np
 from collections import defaultdict, Counter
 import math
+from googletrans import Translator
+
 
 # turns .tsv file into list of lists
 def tsv2mat(fname) :
@@ -19,10 +20,10 @@ class Data :
   links are of the form POS_deprel_POS with POS and deprel
   tags concatenated
   '''
-  def __init__(self,fname='texts/english',lang='en') :
+  def __init__(self,fname='texts/english') :
     edge_file="out/"+fname+".tsv"
     if not nlp.exists_file(edge_file) :
-      nlp.process_file(fname=fname,lang=lang)
+      nlp.process_file(fname=fname)
 
     wss = tsv2mat(edge_file)
 
@@ -75,8 +76,10 @@ class Query(Data) :
   text query and matches it against data to retrive
   sentences in which most of those edges occur
   '''
-  def __init__(self,fname='texts/english',lang='en'):
-    super().__init__(fname=fname,lang=lang)
+  def __init__(self,fname='texts/english'):
+    super().__init__(fname=fname)
+    text = nlp.file2text(fname + ".txt")
+    self.data_lang = nlp.detectLang(text)
     self.nlp_engine=nlp.NLP()
 
   def ask(self,text=None,interactive=False):
@@ -87,6 +90,20 @@ class Query(Data) :
     '''
     if not text: text = input("Query:")
     elif not interactive: print("Query:",text)
+
+    self.question_lang = nlp.detectLang(text)
+    print('qLang:', self.question_lang)  
+    print('Data Lang:',self.data_lang)
+
+    if self.question_lang != self.data_lang:
+      translator = Translator()
+      if self.data_lang == 'zh':
+        text= translator.translate(text, dest='zh-cn').text 
+      elif self.data_lang == 'jv':
+         text= translator.translate(text, dest='jw').text 
+      else:
+        text= translator.translate(text, dest=self.data_lang).text    
+      print('translated question:\n', text)
 
     self.nlp_engine.from_text(text)
     sids=[]
@@ -107,9 +124,19 @@ class Query(Data) :
       c[id]=shared/math.log(union_size)
     print('\nHIT WEIGHTS:', c, "\n")
     best = c.most_common(k)
+    print('show_answers, question_lang:', self.question_lang, ', data_lang:\n', self.data_lang)
+    translator = Translator()
     for sid, _ in best:
       id, sent = self.sents[sid]
       print(id, ':', sent)
+      if self.question_lang != self.data_lang:      
+        if self.question_lang == 'zh':
+          sent= translator.translate(sent, dest='zh-cn').text
+        elif self.question_lang == 'jv':
+          sent= translator.translate(sent, dest='jw').text
+        else:
+          sent= translator.translate(sent, dest=self.question_lang).text
+        print(id, ':', sent)
     print("")
 
   def interact(self):
@@ -142,12 +169,23 @@ def dtests():
 
 def atest() :
   ''' tests symbolic and neural QA on given document '''
-  i=Query()
+  '''
+  i=Query('texts/english')
   print("\n")
   print("ALGORITHMICALLY DERIVED ANSWERS:\n")
   i.ask("What did Penrose show about black holes?")
   i.ask(text="What was in Roger's 1965 paper?")
   print("\n")
+  '''
+  i=Query('texts/chinese')
+  print("\n")
+  print("ALGORITHMICALLY DERIVED ANSWERS:\n")
+  #i.ask("中国藏书有多少年历史？")
+  #i.ask(text="设立图书馆情报学本科教育的学校有多少所？")
+  i.ask("How many years is the Chinese collection of books?")
+  i.ask(text="How many schools have established undergraduate education in library and information science?")
+  print("\n")
+
 
 if __name__=="__main__" :
   atest()
