@@ -62,6 +62,7 @@ class NLP :
   # process text from a file
   def from_file(self,fname='texts/english'):
     self.fname=fname
+    print('from_file:', fname)
     text = file2text(fname + ".txt")
     lang = detectLang(text)
     self.load(lang)
@@ -331,7 +332,7 @@ def test(fname='texts/english',lang='en') :
     result= translator.translate(w, dest=lang)
     print(result.text,end='; ')
   print("\n")
-  #gshow(picg,file_name='pics/'+self.fname+'.gv')
+  gshow(picg,file_name='pics/'+self.fname+'.gv')
 
 if __name__=="__main__" :
   #test(fname='texts/english',lang='es')
