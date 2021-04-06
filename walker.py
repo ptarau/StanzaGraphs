@@ -2,12 +2,18 @@ import glob
 import os
 import sys
 import subprocess
-from summarizer import exists_file, ensure_path, NLP
+from summarizer import exists_file, ensure_path, NLP, detectLang
 from nltk.tokenize import sent_tokenize, word_tokenize
 from multiprocessing import Process, Pool, cpu_count
 
 def pdf2txt(pdf,txt):
+  '''
+    pdf to txt conversion with external tool - optional
+    make sure you install "poppler tools" for this to work!
+    linux: yum install -y poppler-utils
+  '''
   subprocess.run(["pdftotext", "-q",pdf,txt])
+  
 
 def file2string(fname):
   with open(fname,'r') as f:
@@ -17,10 +23,13 @@ def string2file(text,fname) :
   with open(fname,'w') as g:
     g.write(text)
 
-def clean_text_file(fname,lang='en') :
-  if lang!='en': return
+def clean_text_file(fname) :
   #print('cleaning: '+fname)
   data = file2string(fname)
+  print('clean_text_file:\n', data)
+
+  if detectLang(data) != 'en': return
+
   texts=sent_tokenize(data)
   clean=[]
   for text in texts :
@@ -43,7 +52,7 @@ def walk(dir="./"):
         glob.iglob(dir + '**/**', recursive=True))):
      yield filename
 
-def summarize_one(pdf,trim,texts,sums,keys,lang,wk,sk) :
+def summarize_one(pdf,trim,texts,sums,keys,wk,sk) :#needChange
   ''' summarizer for one document'''
   if pdf[-4:].lower() != ".pdf": return None
 
@@ -58,10 +67,12 @@ def summarize_one(pdf,trim,texts,sums,keys,lang,wk,sk) :
   try:
     print('START processing:', pdf)
     if not exists_file(tname) :
+      print(tname, ' does not exit, call pdf2txt')
       pdf2txt(pdf, tname)
-      clean_text_file(tname, lang=lang)
+      print(' call clean_text_file')
+      clean_text_file(tname)
 
-    nlp = NLP(lang=lang)
+    nlp = NLP()
     nlp.from_file(tname0)
     kws, sents, _ = nlp.info(wk, sk)
 
@@ -90,7 +101,6 @@ def  summarize_all(
     texts="out/pdftexts/",
     sums="out/sums/",
     keys="out/keys/",
-    lang='en',
     wk=10,
     sk=8) :
   """ sequential summarizer"""
@@ -102,7 +112,7 @@ def  summarize_all(
   with open(overview,'w') as outf :
     trim = len(pdfs)
     for pdf in walk(dir=pdfs):
-      text=summarize_one(pdf, trim, texts, sums, keys, lang, wk, sk)
+      text=summarize_one(pdf, trim, texts, sums, keys, wk, sk)
       if not text : continue
       print(text, file=outf)
       #print(text)
@@ -119,7 +129,6 @@ def parsum_all(
     texts="out/pdftexts/",
     sums="out/sums/",
     keys="out/keys/",
-    lang='en',
     wk=10,
     sk=8):
   """ parallel summarizer"""
@@ -135,7 +144,7 @@ def parsum_all(
     l=len(fs)
     chunksize=1 #max(1,int(l/(4*count)))
     print('pdf files:',l,'processes:',count,'chunksize:',chunksize)
-    args=[(pdf,trim, texts, sums, keys, lang, wk, sk) for pdf in fs]
+    args=[(pdf,trim, texts, sums, keys, wk, sk) for pdf in fs]
     ensure_path(overview)
     with open(overview,'w') as outf:
       for text in pool.imap(sum_one,args,chunksize=chunksize):
