@@ -15,7 +15,7 @@ def main():
   st.sidebar.write(mes)
   langList = ['', 'Select Language']
   langList +=  list(LANGCODES.keys())
-  langFull=st.sidebar.selectbox('To Language?', langList)
+  langFull=st.sidebar.selectbox('Translate to?', langList)
   lang = LANGCODES.get(langFull)
   st.write('Selected language: ', langFull)
 
