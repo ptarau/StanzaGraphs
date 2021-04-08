@@ -1,7 +1,9 @@
 import streamlit as st
-import os
-from googletrans import Translator
+from myfile import * 
+from googletrans import Translator, LANGCODES, LANGUAGES
 from summarizer import *
+from answerer import *
+
 UPLOAD_DIRECTORY = "uploads"
 
 def main():
@@ -11,17 +13,11 @@ def main():
   '''
 
   st.sidebar.write(mes)
-
-  lang=st.sidebar.selectbox('Translate to?',('English','Chinese', 'russian','spanish' ))
-  #googletrans.LANGUAGES 
-  if lang=='English':
-    lang='en'
-  elif lang=='Chinese':
-    lang='zh-cn'
-  elif lang == 'russian':
-    lang = 'ru'
-  elif lang == 'spanish':
-    lang = 'es'
+  langList = ['', 'Select Language']
+  langList +=  list(LANGCODES.keys())
+  langFull=st.sidebar.selectbox('To Language?', langList)
+  lang = LANGCODES.get(langFull)
+  st.write('Selected language: ', langFull)
 
   uploaded_file = st.sidebar.file_uploader('Select a File', type=['txt', 'pdf'])
   title = None
@@ -32,7 +28,7 @@ def main():
     fpath = save_uploaded_file(uploaded_file)
     if fpath[-4:] == '.pdf':
       pdf2txt(fpath[:-4])    
-    text = file2string(fpath[:-4] + '.txt')
+    text = file2text(fpath[:-4] + '.txt')
 
     data_lang = langid.classify(text)[0]
     st.sidebar.write(f'Language: {data_lang}')
@@ -43,54 +39,50 @@ def main():
 
     if not title or title != uploaded_file.name:
       title = uploaded_file.name
-      action = st.sidebar.selectbox("Choose an option", ["Summarize", "Ask a question"])
-      proceed = st.sidebar.button('Run with selected option!')
-      if proceed :
-        if action == "Summarize":
-          st.write('select Summarize, fname: ', fname, 'to lang:', lang)
-          work(fname=fname,lang=lang)
+      action = st.sidebar.selectbox("Choose an action", ["Summarize", "Ask a question"])     
+      if action == "Summarize":
+        proceed = st.sidebar.button('Run with selected option!')
+        if proceed:
+          st.write('Translate summary from ', fname, 'to ', langFull)
+          summary(fname=fname,lang=lang)
           pass
-        elif action == "Ask a question":
-          st.write('Ask a question')
-          #answerer(talker, lang)    
+      elif action == "Ask a question":
+        st.write('Query Answering')        
+        question = st.text_input('Input your question here:') 
+        if question:          
+          st.write('Answers:')
+          answer(fname, question, lang)    
     else:
         st.info("Please select a text file to upload")
   
   
   
-def ropen(f) :
-  return open(f,'r',encoding='utf8')
-
-def file2string(fname):
-  with ropen(fname) as f:
-    return f.read()
-
     
-def work(fname='texts/english',lang='en',wk=8, sk=5):
+def summary(fname='texts/english',lang='en',wk=8, sk=5):
   st.write('WORKING ON:',fname)
-  #print('WORKING ON:',fname)
   nlp=NLP()
   nlp.from_file(fname)
   kws, sents, picg = nlp.info(wk, sk)
-  st.write("\nSUMMARY:")
-  #print("\nSUMMARY:")
+  st.write("\n\nSUMMARY:")
   translator = Translator()
-  #for sent in sents: st.write(sent)
   for sent in sents : 
     result= translator.translate(sent, dest=lang)
-    #print(result.text)
     st.write(result.text)
 
-  st.write("\nKEYWORDS:")
-  #print("\nKEYWORDS:")
-
-  #for w in kws: st.sidebar.write(w)
+  st.write("\n\nKEYWORDS:")
   for w in kws:
     result= translator.translate(w, dest=lang)
-    #print(result.text,end='; ')
     st.write(result.text)
-  #gshow(picg, file_name='pics/' + self.fname + '.gv')
 
+
+def answer(file_name, question, lang = 'en'):
+  q = Query(file_name)
+  q.ask(question, tolang = lang)
+  if len(q.answer) == 0:
+    st.write("No answers")
+  else:
+    for id in q.answer:
+      st.write(id, ':', q.answer[id])
 
 
 def save_uploaded_file(uploaded_file, fname=None):

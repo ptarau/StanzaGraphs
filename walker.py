@@ -1,35 +1,16 @@
 import glob
 import os
 import sys
-import subprocess
-from summarizer import exists_file, ensure_path, NLP, detectLang
+from myfile import * 
+from summarizer import exists_file, ensure_path, NLP
 from nltk.tokenize import sent_tokenize, word_tokenize
 from multiprocessing import Process, Pool, cpu_count
 
-def pdf2txt(pdf,txt):
-  '''
-    pdf to txt conversion with external tool - optional
-    make sure you install "poppler tools" for this to work!
-    linux: yum install -y poppler-utils
-  '''
-  subprocess.run(["pdftotext", "-q",pdf,txt])
-  
 
-def file2string(fname):
-  with open(fname,'r') as f:
-    return f.read()
-
-def string2file(text,fname) :
-  with open(fname,'w') as g:
-    g.write(text)
-
-def clean_text_file(fname) :
+def clean_text_file(fname,lang='en') :
+  if lang!='en': return
   #print('cleaning: '+fname)
-  data = file2string(fname)
-  print('clean_text_file:\n', data)
-
-  if detectLang(data) != 'en': return
-
+  data = file2text(fname)
   texts=sent_tokenize(data)
   clean=[]
   for text in texts :
@@ -45,14 +26,14 @@ def clean_text_file(fname) :
     sent=" ".join(ws)
     clean.append(sent)
   new_data="\n".join(clean)
-  string2file(new_data,fname)
+  text2file(new_data,fname)
 
 def walk(dir="./"):
   for filename in sorted(set(
         glob.iglob(dir + '**/**', recursive=True))):
      yield filename
 
-def summarize_one(pdf,trim,texts,sums,keys,wk,sk) :#needChange
+def summarize_one(pdf,trim,texts,sums,keys,wk,sk) :
   ''' summarizer for one document'''
   if pdf[-4:].lower() != ".pdf": return None
 
@@ -67,9 +48,7 @@ def summarize_one(pdf,trim,texts,sums,keys,wk,sk) :#needChange
   try:
     print('START processing:', pdf)
     if not exists_file(tname) :
-      print(tname, ' does not exit, call pdf2txt')
       pdf2txt(pdf, tname)
-      print(' call clean_text_file')
       clean_text_file(tname)
 
     nlp = NLP()
@@ -78,11 +57,11 @@ def summarize_one(pdf,trim,texts,sums,keys,wk,sk) :#needChange
 
     ktext = "\n".join(kws)
     ensure_path(kname)
-    string2file(ktext, kname)
+    text2file(ktext, kname)
 
     stext = "\n".join(sents)
     ensure_path(sname)
-    string2file(stext, sname)
+    text2file(stext, sname)
     print('WRITTEN TO',sname,kname)
 
     text = "\n".join(

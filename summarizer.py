@@ -5,9 +5,10 @@ import math
 import networkx as nx
 from visualizer import gshow
 import langid
+from myfile import * 
 from collections import defaultdict
 
-from googletrans import Translator
+from googletrans import Translator, LANGCODES, LANGUAGES
 
 # alternative rankers
 
@@ -219,10 +220,6 @@ def detectLang(text):
   print('detect lang:', lang[0])
   return lang[0]
 
-# read a file into a string text
-def file2text(fname) :
-  with open(fname,'r') as f:
-    return f.read()
 
 def facts2nx(fgen) :
    '''
@@ -294,18 +291,6 @@ def facts2prolog(fgen,fname) :
       print('edge',end='',file=f)
       print(fact,end=".\n",file=f)
 
-def exists_file(fname) :
-  ''' if it exists as file or dir'''
-  return os.path.exists(fname)
-
-def home_dir() :
-  from pathlib import Path
-  return str(Path.home())
-
-def ensure_path(fname) :
-  folder,_=os.path.split(fname)
-  os.makedirs(folder, exist_ok=True)
-
 
 def process_file(fname='texts/english') :
   nlp = NLP()
@@ -332,7 +317,7 @@ def test(fname='texts/english',lang='en') :
     result= translator.translate(w, dest=lang)
     print(result.text,end='; ')
   print("\n")
-  gshow(picg,file_name='pics/'+self.fname+'.gv')
+  #gshow(picg,file_name='pics/'+self.fname+'.gv')
 
 if __name__=="__main__" :
   #test(fname='texts/english',lang='es')

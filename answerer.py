@@ -4,6 +4,7 @@ from sklearn.preprocessing import OneHotEncoder
 import numpy as np
 from collections import defaultdict, Counter
 import math
+from myfile import * 
 from googletrans import Translator
 
 
@@ -78,11 +79,11 @@ class Query(Data) :
   '''
   def __init__(self,fname='texts/english'):
     super().__init__(fname=fname)
-    text = nlp.file2text(fname + ".txt")
+    text = file2text(fname + ".txt")
     self.data_lang = nlp.detectLang(text)
     self.nlp_engine=nlp.NLP()
 
-  def ask(self,text=None,interactive=False):
+  def ask(self,text=None,interactive=False, tolang='en'):
     '''
     compute Jaccard similarity between
     set of edges in query and each sentence,
@@ -110,9 +111,9 @@ class Query(Data) :
 
     for f,ff,r,tt,t,_ in self.nlp_engine.facts() :
       sids.extend(self.occs.get((f,ff,r,tt,t),[]))
-    self.show_answers(sids)
+    self.save_answers(sids, tolang)
 
-  def show_answers(self, sids, k=3):
+  def save_answers(self, sids, tolang, k=3):
     c = Counter(sids)
     qlen=len(list(self.nlp_engine.facts()))
 
@@ -124,20 +125,26 @@ class Query(Data) :
       c[id]=shared/math.log(union_size)
     print('\nHIT WEIGHTS:', c, "\n")
     best = c.most_common(k)
-    print('show_answers, question_lang:', self.question_lang, ', data_lang:\n', self.data_lang)
+    print('save_answers, question_lang:', self.question_lang, ', data_lang:\n', self.data_lang)
     translator = Translator()
+    self.answer = defaultdict(set)
     for sid, _ in best:
       id, sent = self.sents[sid]
       print(id, ':', sent)
-      if self.question_lang != self.data_lang:      
-        if self.question_lang == 'zh':
-          sent= translator.translate(sent, dest='zh-cn').text
-        elif self.question_lang == 'jv':
-          sent= translator.translate(sent, dest='jw').text
-        else:
-          sent= translator.translate(sent, dest=self.question_lang).text
-        print(id, ':', sent)
+      if self.data_lang == tolang:
+        self.answer[id] = sent
+      else:      
+        sent= translator.translate(sent, dest=tolang).text
+        self.answer[id] = sent
     print("")
+
+
+  def show_answers(self):
+    print("\nSummary:")
+    for id in self.answer:
+      print(id, ':', self.answer[id])
+    print("")
+
 
   def interact(self):
     while True:
@@ -150,8 +157,10 @@ class Query(Data) :
 
 def qtest() :
   q=Query()
-  q.ask(text="What did Penrose show?")
-  q.ask(text="What was in Roger's 1965 paper?")
+  q.ask(text="What did Penrose show?", tolang="en")
+  q.show_answers()
+  q.ask(text="What was in Roger's 1965 paper?", tolang="en")
+  q.show_answers()
 
 def dtest() :
   d=Data()
@@ -177,13 +186,20 @@ def atest() :
   i.ask(text="What was in Roger's 1965 paper?")
   print("\n")
   '''
+  
   i=Query('texts/chinese')
   print("\n")
   print("ALGORITHMICALLY DERIVED ANSWERS:\n")
-  #i.ask("中国藏书有多少年历史？")
-  #i.ask(text="设立图书馆情报学本科教育的学校有多少所？")
-  i.ask("How many years is the Chinese collection of books?")
-  i.ask(text="How many schools have established undergraduate education in library and information science?")
+  '''
+  i.ask("中国藏书有多少年历史？")
+  i.show_answers()
+  i.ask(text="设立图书馆情报学本科教育的学校有多少所？")
+  i.show_answers()
+  '''
+  i.ask("How many years is the Chinese collection of books?", tolang="en")
+  i.show_answers()
+  i.ask(text="How many schools have established undergraduate education in library and information science?", tolang="en")
+  i.show_answers()
   print("\n")
 
 
