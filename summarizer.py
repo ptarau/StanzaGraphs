@@ -4,8 +4,11 @@ import os
 import math
 import networkx as nx
 from visualizer import gshow
-
+import langid
+from myfile import * 
 from collections import defaultdict
+
+from googletrans import Translator, LANGCODES, LANGUAGES
 
 # alternative rankers
 
@@ -48,7 +51,7 @@ class NLP :
   for algorithmic and deep-learning based
   information retrieval tasks
   '''
-  def __init__(self,lang='en'):
+  def load(self,lang='en'):
     self.lang=lang
     if not exists_file(home_dir()+'/stanza_resources/'+lang):
       stanza.download(lang)
@@ -60,10 +63,15 @@ class NLP :
   # process text from a file
   def from_file(self,fname='texts/english'):
     self.fname=fname
+    print('from_file:', fname)
     text = file2text(fname + ".txt")
+    lang = detectLang(text)
+    self.load(lang)
     self.doc = self.nlp(text)
 
   def from_text(self,text="Hello!"):
+    lang = detectLang(text)
+    self.load(lang)
     self.doc = self.nlp(text)
 
   def keynoun(self,x):
@@ -203,11 +211,15 @@ class NLP :
     gshow(picg,file_name='pics/'+self.fname+'.gv')
 
 
+def detectLang(text):
+  if len(text) > 200: 
+    short = text[ :200]
+  else:
+     short = text
+  lang = langid.classify(short)
+  print('detect lang:', lang[0])
+  return lang[0]
 
-# read a file into a string text
-def file2text(fname) :
-  with open(fname,'r') as f:
-    return f.read()
 
 def facts2nx(fgen) :
    '''
@@ -279,21 +291,9 @@ def facts2prolog(fgen,fname) :
       print('edge',end='',file=f)
       print(fact,end=".\n",file=f)
 
-def exists_file(fname) :
-  ''' if it exists as file or dir'''
-  return os.path.exists(fname)
 
-def home_dir() :
-  from pathlib import Path
-  return str(Path.home())
-
-def ensure_path(fname) :
-  folder,_=os.path.split(fname)
-  os.makedirs(folder, exist_ok=True)
-
-
-def process_file(fname='texts/english',lang='en') :
-  nlp = NLP(lang)
+def process_file(fname='texts/english') :
+  nlp = NLP()
   nlp.from_file(fname)
   nlp.to_tsv()
   return nlp
@@ -301,15 +301,27 @@ def process_file(fname='texts/english',lang='en') :
 # TESTS
 
 def test(fname='texts/english',lang='en') :
-  nlp=NLP(lang)
+  nlp=NLP()
   nlp.from_file(fname)
-  nlp.to_tsv()
-  nlp.to_prolog()
-  nlp.summarize()
+  kws, sents, picg = nlp.info(wk=8, sk=5)
+  translator = Translator()
+  print("\nSUMMARY:")
+  for sent in sents : print(sent)
+  for sent in sents : 
+    result= translator.translate(sent, dest=lang)
+    print(result.text)
+  print("\nKEYWORDS:")
+  for w in kws : print(w,end='; ')
+  print("\n")
+  for w in kws : 
+    result= translator.translate(w, dest=lang)
+    print(result.text,end='; ')
+  print("\n")
+  #gshow(picg,file_name='pics/'+self.fname+'.gv')
 
 if __name__=="__main__" :
-  test(fname='texts/english',lang='en')
-  test(fname='texts/cosmo', lang='en')
-  test(fname='texts/spanish',lang='es')
-  test(fname='texts/chinese',lang='zh-hans')
-  test(fname='texts/russian',lang='ru')
+  #test(fname='texts/english',lang='es')
+  #test(fname='texts/cosmo', lang='en')
+  #test(fname='texts/spanish',lang='en')
+  test(fname='texts/chinese',lang='en')
+  #test(fname='texts/russian',lang='zh-cn')

@@ -1,10 +1,12 @@
 import summarizer as nlp
-
 import csv
 from sklearn.preprocessing import OneHotEncoder
 import numpy as np
 from collections import defaultdict, Counter
 import math
+from myfile import * 
+from googletrans import Translator
+
 
 # turns .tsv file into list of lists
 def tsv2mat(fname) :
@@ -19,10 +21,10 @@ class Data :
   links are of the form POS_deprel_POS with POS and deprel
   tags concatenated
   '''
-  def __init__(self,fname='texts/english',lang='en') :
+  def __init__(self,fname='texts/english') :
     edge_file="out/"+fname+".tsv"
     if not nlp.exists_file(edge_file) :
-      nlp.process_file(fname=fname,lang=lang)
+      nlp.process_file(fname=fname)
 
     wss = tsv2mat(edge_file)
 
@@ -75,11 +77,13 @@ class Query(Data) :
   text query and matches it against data to retrive
   sentences in which most of those edges occur
   '''
-  def __init__(self,fname='texts/english',lang='en'):
-    super().__init__(fname=fname,lang=lang)
+  def __init__(self,fname='texts/english'):
+    super().__init__(fname=fname)
+    text = file2text(fname + ".txt")
+    self.data_lang = nlp.detectLang(text)
     self.nlp_engine=nlp.NLP()
 
-  def ask(self,text=None,interactive=False):
+  def ask(self,text=None,interactive=False, tolang='en'):
     '''
     compute Jaccard similarity between
     set of edges in query and each sentence,
@@ -88,14 +92,28 @@ class Query(Data) :
     if not text: text = input("Query:")
     elif not interactive: print("Query:",text)
 
+    self.question_lang = nlp.detectLang(text)
+    print('qLang:', self.question_lang)  
+    print('Data Lang:',self.data_lang)
+
+    if self.question_lang != self.data_lang:
+      translator = Translator()
+      if self.data_lang == 'zh':
+        text= translator.translate(text, dest='zh-cn').text 
+      elif self.data_lang == 'jv':
+         text= translator.translate(text, dest='jw').text 
+      else:
+        text= translator.translate(text, dest=self.data_lang).text    
+      print('translated question:\n', text)
+
     self.nlp_engine.from_text(text)
     sids=[]
 
     for f,ff,r,tt,t,_ in self.nlp_engine.facts() :
       sids.extend(self.occs.get((f,ff,r,tt,t),[]))
-    self.show_answers(sids)
+    self.save_answers(sids, tolang)
 
-  def show_answers(self, sids, k=3):
+  def save_answers(self, sids, tolang, k=3):
     c = Counter(sids)
     qlen=len(list(self.nlp_engine.facts()))
 
@@ -107,10 +125,26 @@ class Query(Data) :
       c[id]=shared/math.log(union_size)
     print('\nHIT WEIGHTS:', c, "\n")
     best = c.most_common(k)
+    print('save_answers, question_lang:', self.question_lang, ', data_lang:\n', self.data_lang)
+    translator = Translator()
+    self.answer = defaultdict(set)
     for sid, _ in best:
       id, sent = self.sents[sid]
       print(id, ':', sent)
+      if self.data_lang == tolang:
+        self.answer[id] = sent
+      else:      
+        sent= translator.translate(sent, dest=tolang).text
+        self.answer[id] = sent
     print("")
+
+
+  def show_answers(self):
+    print("\nSummary:")
+    for id in self.answer:
+      print(id, ':', self.answer[id])
+    print("")
+
 
   def interact(self):
     while True:
@@ -123,8 +157,10 @@ class Query(Data) :
 
 def qtest() :
   q=Query()
-  q.ask(text="What did Penrose show?")
-  q.ask(text="What was in Roger's 1965 paper?")
+  q.ask(text="What did Penrose show?", tolang="en")
+  q.show_answers()
+  q.ask(text="What was in Roger's 1965 paper?", tolang="en")
+  q.show_answers()
 
 def dtest() :
   d=Data()
@@ -142,12 +178,30 @@ def dtests():
 
 def atest() :
   ''' tests symbolic and neural QA on given document '''
-  i=Query()
+  '''
+  i=Query('texts/english')
   print("\n")
   print("ALGORITHMICALLY DERIVED ANSWERS:\n")
   i.ask("What did Penrose show about black holes?")
   i.ask(text="What was in Roger's 1965 paper?")
   print("\n")
+  '''
+  
+  i=Query('texts/chinese')
+  print("\n")
+  print("ALGORITHMICALLY DERIVED ANSWERS:\n")
+  '''
+  i.ask("中国藏书有多少年历史？")
+  i.show_answers()
+  i.ask(text="设立图书馆情报学本科教育的学校有多少所？")
+  i.show_answers()
+  '''
+  i.ask("How many years is the Chinese collection of books?", tolang="en")
+  i.show_answers()
+  i.ask(text="How many schools have established undergraduate education in library and information science?", tolang="en")
+  i.show_answers()
+  print("\n")
+
 
 if __name__=="__main__" :
   atest()

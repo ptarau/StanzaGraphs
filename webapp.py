@@ -1,38 +1,100 @@
 import streamlit as st
+from myfile import * 
+from googletrans import Translator, LANGCODES, LANGUAGES
 from summarizer import *
+from answerer import *
 
-st.title('StanzaGraphs ')
+UPLOAD_DIRECTORY = "uploads"
 
+def main():
+  st.sidebar.write('StanzaGraphs ')
+  mes='''
+  a Multilingual STANZA-based Summary and Keyword Extractor and Question-Answering System using TextGraphs and Neural Networks
+  '''
 
+  st.sidebar.write(mes)
+  langList = ['', 'Select Language']
+  langList +=  list(LANGCODES.keys())
+  langFull=st.sidebar.selectbox('To Language?', langList)
+  lang = LANGCODES.get(langFull)
+  st.write('Selected language: ', langFull)
 
-mes='''
-a Multilingual STANZA-based Summary and Keyword Extractor and Question-Answering System using TextGraphs and Neural Networks
-'''
+  uploaded_file = st.sidebar.file_uploader('Select a File', type=['txt', 'pdf'])
+  title = None
+  action = None
 
-st.sidebar.write(mes)
+  if uploaded_file is not None:
+    print(f"New file uploaded: {uploaded_file.name}")
+    fpath = save_uploaded_file(uploaded_file)
+    if fpath[-4:] == '.pdf':
+      pdf2txt(fpath[:-4])    
+    text = file2text(fpath[:-4] + '.txt')
 
-lang=st.sidebar.selectbox('Language?',('English','Chinese'))
+    data_lang = langid.classify(text)[0]
+    st.sidebar.write(f'Language: {data_lang}')
 
-if lang=='English':
-  lang='en'
-  fname='texts/english'
-else:
-  lang='zh-hans'
-  fname = 'texts/chinese'
+    fname = fpath[:-4]
+    print("fname: ") 
+    print(fname)
 
-proceed = st.sidebar.button('Run with selected options!')
-
-def work(fname='texts/english',lang='en',wk=8, sk=5):
+    if not title or title != uploaded_file.name:
+      title = uploaded_file.name
+      action = st.sidebar.selectbox("Choose an action", ["Summarize", "Ask a question"])     
+      if action == "Summarize":
+        proceed = st.sidebar.button('Run with selected option!')
+        if proceed:
+          st.write('Translate summary from ', fname, 'to ', langFull)
+          summary(fname=fname,lang=lang)
+          pass
+      elif action == "Ask a question":
+        st.write('Query Answering')        
+        question = st.text_input('Input your question here:') 
+        if question:          
+          st.write('Answers:')
+          answer(fname, question, lang)    
+    else:
+        st.info("Please select a text file to upload")
+  
+  
+  
+    
+def summary(fname='texts/english',lang='en',wk=8, sk=5):
   st.write('WORKING ON:',fname)
-  nlp = NLP(lang)
+  nlp=NLP()
   nlp.from_file(fname)
   kws, sents, picg = nlp.info(wk, sk)
-  st.write("\nSUMMARY:")
-  for sent in sents: st.write(sent)
+  st.write("\n\nSUMMARY:")
+  translator = Translator()
+  for sent in sents : 
+    result= translator.translate(sent, dest=lang)
+    st.write(result.text)
 
-  st.sidebar.write("\nKEYWORDS:")
-  for w in kws: st.sidebar.write(w)
-  #gshow(picg, file_name='pics/' + self.fname + '.gv')
+  st.write("\n\nKEYWORDS:")
+  for w in kws:
+    result= translator.translate(w, dest=lang)
+    st.write(result.text)
 
-if proceed :
-  work(fname=fname,lang=lang)
+
+def answer(file_name, question, lang = 'en'):
+  q = Query(file_name)
+  q.ask(question, tolang = lang)
+  if len(q.answer) == 0:
+    st.write("No answers")
+  else:
+    for id in q.answer:
+      st.write(id, ':', q.answer[id])
+
+
+def save_uploaded_file(uploaded_file, fname=None):
+    if not fname:
+        fname = uploaded_file.name
+    if not os.path.exists(UPLOAD_DIRECTORY):
+        os.makedirs(UPLOAD_DIRECTORY)
+    fpath = os.path.join(UPLOAD_DIRECTORY, fname)
+    with open(fpath, "wb") as f:
+        f.write(uploaded_file.getbuffer())
+    return fpath
+
+
+if __name__ == "__main__":
+    main()
