@@ -15,7 +15,7 @@ def main():
   st.sidebar.write(mes)
   langList = ['', 'Select Language']
   langList +=  list(LANGCODES.keys())
-  langFull=st.sidebar.selectbox('Translate to?', langList)
+  langFull=st.sidebar.selectbox('To Language?', langList)
   lang = LANGCODES.get(langFull)
   st.write('Selected language: ', langFull)
 
@@ -47,7 +47,7 @@ def main():
           summary(fname=fname,lang=lang)
           pass
       elif action == "Ask a question":
-        st.write('Query Answering')        
+        st.write('Ask a question')        
         question = st.text_input('Input your question here:') 
         if question:          
           st.write('Answers:')

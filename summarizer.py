@@ -143,8 +143,8 @@ class NLP :
 
   def info(self,wk=8,sk=6,ranker=pagerank):
     '''extract keywords and summary sentences'''
-    g = self.to_nx()
-    ranks = rank_with(ranker, g)
+    self.g = self.to_nx()
+    ranks = rank_with(ranker, self.g)
     #print('@@@@@',ranks)
 
     def rank_phrase(pair):
@@ -166,7 +166,7 @@ class NLP :
     ns=self.keynouns()
     contexts = self.context_dict()
 
-    kwds,sids,picg=ranks2info(g,ranks,self.doc.sentences,ns,wk,sk,self.lang)
+    kwds,sids,picg=ranks2info(self.g,ranks,self.doc.sentences,ns,wk,sk,self.lang)
     kwds=map(extend_kwd,kwds)
     kwds=dict((k,1) for k in kwds) # ordered set emulation by (now) ordered dict
     kwds=list(kwds) #[k for k in kwds]
