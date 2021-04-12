@@ -13,10 +13,13 @@ def main():
   '''
 
   st.sidebar.write(mes)
-  langList = ['', 'Select Language']
+  langList = ['', 'Auto detect']
   langList +=  list(LANGCODES.keys())
   langFull=st.sidebar.selectbox('Translate to?', langList)
-  lang = LANGCODES.get(langFull)
+  if langFull != "Auto detect":
+    lang = LANGCODES.get(langFull)
+  else:
+    lang = langFull
   st.write('Selected language: ', langFull)
 
   uploaded_file = st.sidebar.file_uploader('Select a File', type=['txt', 'pdf'])
@@ -24,14 +27,18 @@ def main():
   action = None
 
   if uploaded_file is not None:
-    print(f"New file uploaded: {uploaded_file.name}")
     fpath = save_uploaded_file(uploaded_file)
     if fpath[-4:] == '.pdf':
       pdf2txt(fpath[:-4])    
     text = file2text(fpath[:-4] + '.txt')
 
     data_lang = langid.classify(text)[0]
-    st.sidebar.write(f'Language: {data_lang}')
+    if data_lang == 'zh':
+      data_lang = 'zh-cn'
+    elif data_lang == 'jv':
+      data_lang = 'jw'
+    data_fulllang = LANGUAGES.get(data_lang)
+    st.sidebar.write('Language:',data_fulllang)
 
     fname = fpath[:-4]
     print("fname: ") 
@@ -43,7 +50,10 @@ def main():
       if action == "Summarize":
         proceed = st.sidebar.button('Run with selected option!')
         if proceed:
-          st.write('Translate summary from ', fname, 'to ', langFull)
+          if langFull == "Auto detect":
+            st.write('Translate summary from ', fname, 'to ', data_fulllang)
+          else:
+            st.write('Translate summary from ', fname, 'to ', langFull)
           summary(fname=fname,lang=lang)
           pass
       elif action == "Ask a question":
@@ -66,17 +76,25 @@ def summary(fname='texts/english',lang='en',wk=8, sk=5):
   st.write("\n\nSUMMARY:")
   translator = Translator()
   for sent in sents : 
-    result= translator.translate(sent, dest=lang)
-    st.write(result.text)
+    if lang == "Auto detect":
+      st.write(sent)
+    else:
+      result= translator.translate(sent, dest=lang)
+      st.write(result.text)
 
   st.write("\n\nKEYWORDS:")
   for w in kws:
-    result= translator.translate(w, dest=lang)
-    st.write(result.text)
+    if lang == "Auto detect":
+      st.write(w)
+    else:
+      result= translator.translate(w, dest=lang)
+      st.write(result.text)
 
 
 def answer(file_name, question, lang = 'en'):
   q = Query(file_name)
+  if lang == "Auto detect":
+    lang = langid.classify(question)[0]
   q.ask(question, tolang = lang)
   if len(q.answer) == 0:
     st.write("No answers")
