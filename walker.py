@@ -135,8 +135,11 @@ if __name__=="__main__":
   print('OR that you give the path of a directory where pdfs/ is a subdirectory')
 
   params=dict(
-    rootdir = "/Users/tarau/Desktop/sit/GRAPHSTAX/",
-    pdfs = "biblion/"
+    # rootdir = "/Users/tarau/Desktop/sit/GRAPHSTAX/",
+    # pdfs = "biblion/"
+    rootdir = "/Users/tarau/Desktop/sit/MISC/",
+    pdfs="sienna2021/"
+
   )
   summarize_all()
   #summarize_all(**params)
