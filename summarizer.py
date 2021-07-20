@@ -66,7 +66,7 @@ class NLP :
   def from_text(self,text="Hello!"):
     self.doc = self.nlp(text)
 
-  def keynoun(self,x):
+  def is_keynoun(self,x):
     '''true for "important" nouns'''
     ok = x.upos in ('NOUN','PROPN') and \
          ('subj' in x.deprel or 'ob' in x.deprel)
@@ -81,7 +81,7 @@ class NLP :
         yield x.lemma,  x.upos,'PREDICATE_OF','SENT',    sid,sid
       else :
         hw=sent.words[x.head-1]
-        if self.keynoun(x) : # reverse link to prioritize key nouns
+        if self.is_keynoun(x) : # reverse link to prioritize key nouns
           yield hw.lemma,  hw.upos,"rev_"+x.deprel, x.upos,  x.lemma, sid
           yield (sid,   'SENT', 'ABOUT',x.upos,              x.lemma, sid)
           if not x.lemma in first_occ :
@@ -104,7 +104,7 @@ class NLP :
     ns=set()
     for sent in self.doc.sentences:
       for x in sent.words:
-        if self.keynoun(x) :
+        if self.is_keynoun(x) :
           ns.add(x.lemma)
     return ns
 
