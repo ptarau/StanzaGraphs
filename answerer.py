@@ -1,4 +1,5 @@
-import summarizer as nlp
+from  summarizer import exists_file,process_file,NLP,file2text,detect_lang
+from translator import translate
 
 import csv
 from sklearn.preprocessing import OneHotEncoder
@@ -13,16 +14,20 @@ def tsv2mat(fname) :
      return list(wss)
 
 class Data :
-  '''
+  """
   builds dataset from dependency edges in .tsv file associating
   <from,link,to> edges and sentences in which they occur;
   links are of the form POS_deprel_POS with POS and deprel
   tags concatenated
-  '''
-  def __init__(self,fname='texts/english',lang='en') :
+  """
+  def __init__(self,fname=None) :
     edge_file="out/"+fname+".tsv"
-    if not nlp.exists_file(edge_file) :
-      nlp.process_file(fname=fname,lang=lang)
+    if not exists_file(edge_file) :
+      nlp=process_file(fname=fname)
+      self.lang=nlp.lang
+    else:
+      #print('!!! DETECT LANGUAGE',fname)
+      self.lang=detect_lang(file2text(fname+".txt"))
 
     wss = tsv2mat(edge_file)
 
@@ -30,12 +35,12 @@ class Data :
     occs=defaultdict(set)
     sids=set()
     lens=[]
-    for f,ff,r,tt,t,id in wss:
-      id=int(id)
-      if len(lens)<=id : lens.append(0)
-      lens[id]+=1
-      occs[(f,ff,r,tt,t)].add(id)
-      sids.add(id)
+    for f,ff,r,tt,t,sid in wss:
+      sid=int(sid)
+      if len(lens)<=sid : lens.append(0)
+      lens[sid]+=1
+      occs[(f,ff,r,tt,t)].add(sid)
+      sids.add(sid)
     self.occs=occs # dict where edges occur
     self.lens=lens # number of edges in each sentence
 
@@ -70,47 +75,66 @@ class Data :
     #print('SENTENCE LENGTHS',lens)
 
 class Query(Data) :
-  '''
+  """
   builds <from,link,to> dependency links form a given
   text query and matches it against data to retrive
   sentences in which most of those edges occur
-  '''
-  def __init__(self,fname='texts/english',lang='en'):
-    super().__init__(fname=fname,lang=lang)
-    self.nlp_engine=nlp.NLP()
+  """
+  def __init__(self,fname=None):
+    super().__init__(fname=fname)
+    self.nlp_engine=NLP()
 
-  def ask(self,text=None,interactive=False):
-    '''
-    compute Jaccard similarity between
+
+
+  def query(self,text=None,k=3):
+    """
+    compute a similarity between
     set of edges in query and each sentence,
     then select the most similar ones
-    '''
-    if not text: text = input("Query:")
-    elif not interactive: print("Query:",text)
+    """
+
+    text = translate(text, target_lang=self.lang)
 
     self.nlp_engine.from_text(text)
+
     sids=[]
 
     for f,ff,r,tt,t,_ in self.nlp_engine.facts() :
       sids.extend(self.occs.get((f,ff,r,tt,t),[]))
-    self.show_answers(sids)
 
-  def show_answers(self, sids, k=3):
     c = Counter(sids)
-    qlen=len(list(self.nlp_engine.facts()))
+    qlen = len(list(self.nlp_engine.facts()))
 
-    for id in c:
-      shared=c[id]
-      union_size=self.lens[id]+qlen-shared
-      #jaccard=shared/union_size
-      #c[id]=jaccard
-      c[id]=shared/math.log(union_size)
-    print('\nHIT WEIGHTS:', c, "\n")
+    for sid in c:
+      shared = c[sid]
+      union_size = self.lens[sid] + qlen - shared
+      # jaccard=shared/union_size
+      # c[sid]=jaccard
+      c[sid] = shared / math.log(union_size)
+
+      #print('\nHIT WEIGHTS:', c, "\n")
+
     best = c.most_common(k)
+    best = sorted(best)
     for sid, _ in best:
-      id, sent = self.sents[sid]
-      print(id, ':', sent)
-    print("")
+      sid, sent = self.sents[sid]
+      sent=translate(sent,source_lang=self.lang)
+      yield sid,sent
+
+
+  def ask(self,text=None,interactive=False):
+    """
+    interacts if needed to collect query results
+    """
+    if not text: text = input("Query:")
+    elif not interactive: print("Query:",text)
+
+
+    answers=list(self.query(text=text))
+    print('')
+    for sid,sent in answers :
+      print(sid,':',sent)
+    print('')
 
   def interact(self):
     while True:
@@ -122,32 +146,37 @@ class Query(Data) :
 ### TESTS ###
 
 def qtest() :
-  q=Query()
+  q=Query(fname='texts/english')
   q.ask(text="What did Penrose show?")
   q.ask(text="What was in Roger's 1965 paper?")
 
 def dtest() :
-  d=Data()
+  d=Data(fname='texts/english')
   print("X",d.hot_X.shape)
   print(d.hot_X)
   print("y",d.hot_y.shape)
   print(d.hot_y)
 
-def dtests():
-  ''' data loading tests'''
-  dtest('out/texts/english.tsv')
-  dtest('out/texts/spanish.tsv')
-  dtest('out/texts/chinese.tsv')
-  dtest('out/texts/russian.tsv')
 
-def atest() :
-  ''' tests symbolic and neural QA on given document '''
-  i=Query()
+def en_test() :
+  """ tests symbolic and neural QA on given document """
+  i=Query(fname='texts/english')
   print("\n")
   print("ALGORITHMICALLY DERIVED ANSWERS:\n")
   i.ask("What did Penrose show about black holes?")
   i.ask(text="What was in Roger's 1965 paper?")
   print("\n")
 
+def sp_test() :
+  """ tests symbolic and neural QA on given document """
+  i=Query(fname='texts/spanish')
+  print("\n")
+  print("ANSWER(S) TO QUESTION ABOUT SPANISH TEXT:\n")
+  i.ask("Who will face a debate this Tuesday?")
+  print("\n")
+
+
+
 if __name__=="__main__" :
-  atest()
+  en_test()
+  sp_test()

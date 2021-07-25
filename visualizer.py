@@ -3,6 +3,8 @@ from graphviz import Digraph as DotGraph
 MAX_EDGES=2000
 
 def gshow(g, attr=None, file_name='pics/temp.gv',view=False):
+  if g is None: return
+
   ''' shows a networx DiGraph g
       using graphviz
       it could become slow on large graphs (above MAX_EDGES)

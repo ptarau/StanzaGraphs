@@ -1,38 +1,95 @@
 import streamlit as st
 from summarizer import *
+from answerer import Query
+from walker import pdf2txt
 
-st.title('StanzaGraphs ')
+st.set_page_config(layout="wide")
 
+st.title('StanzaGraph: Multilingual Summary and Keyword Extractor and Question-Answering System')
 
+left,right=st.beta_columns((1,1))
 
-mes='''
-a Multilingual STANZA-based Summary and Keyword Extractor and Question-Answering System using TextGraphs and Neural Networks
-'''
+uploaded_file = st.sidebar.file_uploader('Select a File', type=['txt', 'pdf'])
 
-st.sidebar.write(mes)
+UPLOAD_DIRECTORY = "uploads/"
 
-lang=st.sidebar.selectbox('Language?',('English','Chinese'))
+def handle_uploaded() :
+  if uploaded_file is None : return None
+  fpath = save_uploaded_file()
+  suf = fpath[-4:]
+  fname = fpath[:-4]
+  if suf == '.pdf':
+    pname = fname + ".pdf"
+    tname = fname + ".txt"
+    pdf2txt(pname, tname)
+    return fname
+  elif suf == '.txt':
+    return fname
+  else:
+    with right:
+      st.write('Please upload a .txt or a .pdf file!')
 
-if lang=='English':
-  lang='en'
-  fname='texts/english'
-else:
-  lang='zh-hans'
-  fname = 'texts/chinese'
+def save_uploaded_file():
+    fname = uploaded_file.name
+    fpath = os.path.join(UPLOAD_DIRECTORY, fname)
+    if exists_file(fpath) : return fpath
 
-proceed = st.sidebar.button('Run with selected options!')
+    ensure_path(UPLOAD_DIRECTORY)
 
-def work(fname='texts/english',lang='en',wk=8, sk=5):
-  st.write('WORKING ON:',fname)
-  nlp = NLP(lang)
+    with open(fpath, "wb") as f:
+      f.write(uploaded_file.getbuffer())
+    return fpath
+
+summarize = st.sidebar.button('Summarize it!')
+
+with st.sidebar :
+  with st.form('Query'):
+    question = st.text_input(
+      'Enter your question here:',
+      "What is Penrose's 1965 paper about?")
+
+    query = st.form_submit_button('Submit your question!')
+    if query:
+      with left:
+        st.write('Question:' + " " + question)
+
+def do_summary():
+  fname = handle_uploaded()
+  if not fname : st.write('Please upload a file!')
+
+  nlp = NLP()
   nlp.from_file(fname)
-  kws, sents, picg = nlp.info(wk, sk)
-  st.write("\nSUMMARY:")
-  for sent in sents: st.write(sent)
 
-  st.sidebar.write("\nKEYWORDS:")
-  for w in kws: st.sidebar.write(w)
+  kws, sents, picg = nlp.info()
+  with right:
+    st.write("\nSUMMARY:")
+    for sent in sents: st.write(sent)
+
+    st.write("\nKEYWORDS:")
+    #for w in kws: st.write(w)
+    s="; ".join(kws)
+    st.write(s)
   #gshow(picg, file_name='pics/' + self.fname + '.gv')
 
-if proceed :
-  work(fname=fname,lang=lang)
+
+def do_query():
+  fname = handle_uploaded()
+  if not fname:
+    st.write('Please upload a file!')
+    return
+  q = Query(fname=fname)
+  with left:
+    st.write('Answers:')
+    answers=list(q.query(question))
+    if not answers :
+      st.write("I do not know.")
+    else:
+      for (_,sent) in answers:
+         st.write(sent)
+
+
+if summarize :
+  do_summary()
+elif query:
+  do_summary()
+  do_query()

@@ -4,77 +4,70 @@ import os
 import math
 import networkx as nx
 from visualizer import gshow
-
+import langid
 from collections import defaultdict
 
-# alternative rankers
+from params import *
+from rankers import ranker_dict
+from translator import translate
 
-def rank_with(f,g) :
-  return f(g)
-
-def pagerank(g) :
-  return nx.pagerank(g)
-
-def subg(g) :
-  g=g.to_undirected()
-  return nx.subgraph_centrality(g)
-
-def closeness(g) :
-  return nx.closeness_centrality(g)
-
-def betweenness(g) :
-  return nx.betweenness_centrality(g)
-
-def current_flow(g) :
-  u=g.to_undirected()
-  return nx.current_flow_betweenness_centrality(u)
-
-def hits(g) :
-  (hubs,auths)=nx.hits_numpy(g)
-  ranks=dict()
-  for x in g.nodes():
-    if isinstance(x,int) :
-      ranks[x]=hubs[x]
-    else :
-      ranks[x]=auths[x]
-  return ranks
+def detect_lang(text):
+  return langid.classify(text)[0]
 
 class NLP :
-  '''
+  """
   stanza-based multi-lingual NLP processor
   that extracts summaries and keywords
   and builds text graph edge files derived
   from dependency links usable donwstream
   for algorithmic and deep-learning based
   information retrieval tasks
-  '''
-  def __init__(self,lang='en'):
-    self.lang=lang
-    if not exists_file(home_dir()+'/stanza_resources/'+lang):
-      stanza.download(lang)
-    self.nlp = stanza.Pipeline(lang=lang,logging_level='WARN')
+  """
+
+  def __init__(self,lang=None):
     ensure_path("out/")
     ensure_path("pics/")
+    self.set_language(lang=lang)
+
+
+  def set_language(self,lang=None):
+    self.lang = lang
+    if lang is None: return
+
+    if not exists_file(home_dir() + '/stanza_resources/' + lang):
+      stanza.download(lang)
+    self.nlp = stanza.Pipeline(lang=lang, logging_level='ERROR')
+
+  def detect_language(self,text):
+    detected=detect_lang(text)
+    if self.lang is None or self.lang!=detected:
+       self. set_language(detected)
 
 
   # process text from a file
-  def from_file(self,fname='texts/english'):
+  def from_file(self,fname=None):
     self.fname=fname
     text = file2text(fname + ".txt")
+    self.detect_language(text)
     self.doc = self.nlp(text)
+    #print('LANGUAGE:',self.lang)
 
   def from_text(self,text="Hello!"):
+    self.detect_language(text)
     self.doc = self.nlp(text)
 
   def is_keynoun(self,x):
-    '''true for "important" nouns'''
+    """true for "important" nouns"""
     ok = x.upos in ('NOUN','PROPN') and \
          ('subj' in x.deprel or 'ob' in x.deprel)
     if self.lang=='en' : ok=ok and len(x.lemma)>3
     return ok
 
+  def get_text(self):
+    return self.doc.text
+
   def facts(self):
-    '''generates <from,link,to,sentence_id> tuples'''
+    """generates <from,from_tag,relation,to_tag,to,sentence_id> tuples"""
     first_occ=dict()
     def fact(x,sent,sid) :
       if x.head==0 :
@@ -100,7 +93,7 @@ class NLP :
         yield from fact(word,sentence,sent_id)
 
   def keynouns(self):
-    '''collects important nouns'''
+    """collects important nouns"""
     ns=set()
     for sent in self.doc.sentences:
       for x in sent.words:
@@ -133,10 +126,15 @@ class NLP :
     return contexts
 
 
-  def info(self,wk=8,sk=6,ranker=pagerank):
-    '''extract keywords and summary sentences'''
+  def info(self):
+    wk=PARAMS['k_count']
+    sk=PARAMS['s_count']
+
+    """extract keywords and summary sentences"""
+
+    ranker = ranker_dict[PARAMS['RANKER']]
     g = self.to_nx()
-    ranks = rank_with(ranker, g)
+    ranks = ranker(g)
     #print('@@@@@',ranks)
 
     def rank_phrase(pair):
@@ -160,20 +158,24 @@ class NLP :
 
     kwds,sids,picg=ranks2info(g,ranks,self.doc.sentences,ns,wk,sk,self.lang)
     kwds=map(extend_kwd,kwds)
-    kwds=dict((k,1) for k in kwds) # ordered set emulation by (now) ordered dict
-    kwds=list(kwds) #[k for k in kwds]
+    kwds=dict((k,1) for k in kwds) # remove duplicates, keep order
+    kwds = [translate(w, source_lang=self.lang) for w in kwds]
 
-    sents=list(map(self.get_sent,sorted(sids)))
+    sents=map(self.get_sent,sorted(sids))
+    sents=[translate(s,source_lang=self.lang) for s in sents]
+
 
     return kwds,sents,picg
 
   def to_nx(self): # converts to networkx graph
     return facts2nx(self.facts())
 
+  '''
   def show(self):
-    ''' visualize  nodes and edges'''
+    """ visualize  nodes and edges"""
     g = self.to_nx()
     gshow(g,file_name="pics/"+self.fname+".gv")
+ '''
 
   def to_tsv(self): # writes out edges to .tsv file
     facts2tsv(self.facts(),"out/"+self.fname+".tsv")
@@ -193,16 +195,14 @@ class NLP :
     facts2tsv(sent_gen(),"out/"+self.fname+"_sents.tsv")
 
 
-  def summarize(self,wk=8,sk=5) : # extract summary and keywords
-    kws,sents,picg=self.info(wk,sk)
+  def summarize(self) : # extract summary and keywords
+    kws,sents,picg=self.info()
     print("\nSUMMARY:")
     for sent in sents : print(sent)
     print("\nKEYWORDS:")
     for w in kws : print(w,end='; ')
     print("\n")
-    gshow(picg,file_name='pics/'+self.fname+'.gv')
-
-
+    if picg :gshow(picg,file_name='pics/'+self.fname+'.gv')
 
 # read a file into a string text
 def file2text(fname) :
@@ -210,11 +210,11 @@ def file2text(fname) :
     return f.read()
 
 def facts2nx(fgen) :
-   '''
+   """
    turns edges into networkx DiGraph
    edges also contain "root" links to
    sentence they originate from
-   '''
+   """
    g=nx.DiGraph()
    for f,  ff,rel,tt, t,sid in fgen :
      g.add_edge(f,t)
@@ -252,15 +252,19 @@ def ranks2info(g,ranks,sents,keyns,wk,sk,lang) :
         sk -= 1
 
   # visualize
-  _,minr=ranked[(len(ranked)-1)//4]
-  good = [x for (x,r) in ranked
+  if PARAMS['pics'] :
+    _,minr=ranked[(len(ranked)-1)//4]
+    good = [x for (x,r) in ranked
           if isinstance(x,str)
              and "'" not in x
              and (r>minr or x in keyns)]
-  picg = nx.DiGraph()
-  for (x,y) in g.edges() :
-    if x in good and y in good :
-      picg.add_edge(x,y)
+    picg = nx.DiGraph()
+    for (x,y) in g.edges() :
+      if x in good and y in good :
+        picg.add_edge(x,y)
+  else:
+    picg=None
+
   return kwds,sids,picg
 
 # writes out edge facts as .tsv file
@@ -280,7 +284,7 @@ def facts2prolog(fgen,fname) :
       print(fact,end=".\n",file=f)
 
 def exists_file(fname) :
-  ''' if it exists as file or dir'''
+  """ if it exists as file or dir"""
   return os.path.exists(fname)
 
 def home_dir() :
@@ -292,24 +296,24 @@ def ensure_path(fname) :
   os.makedirs(folder, exist_ok=True)
 
 
-def process_file(fname='texts/english',lang='en') :
-  nlp = NLP(lang)
+def process_file(fname=None) :
+  nlp = NLP()
   nlp.from_file(fname)
   nlp.to_tsv()
   return nlp
 
 # TESTS
 
-def test(fname='texts/english',lang='en') :
-  nlp=NLP(lang)
+def test(fname='texts/english') :
+  nlp=NLP()
   nlp.from_file(fname)
   nlp.to_tsv()
   nlp.to_prolog()
   nlp.summarize()
 
 if __name__=="__main__" :
-  test(fname='texts/english',lang='en')
-  test(fname='texts/cosmo', lang='en')
-  test(fname='texts/spanish',lang='es')
-  test(fname='texts/chinese',lang='zh-hans')
-  test(fname='texts/russian',lang='ru')
+  test(fname='texts/english')
+  #test(fname='texts/cosmo')
+  test(fname='texts/spanish')
+  test(fname='texts/chinese')
+  test(fname='texts/russian')

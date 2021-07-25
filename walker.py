@@ -5,6 +5,7 @@ import subprocess
 from summarizer import exists_file, ensure_path, NLP
 from nltk.tokenize import sent_tokenize, word_tokenize
 from multiprocessing import Process, Pool, cpu_count
+from params import *
 
 def pdf2txt(pdf,txt):
   subprocess.run(["pdftotext", "-q",pdf,txt])
@@ -63,7 +64,7 @@ def summarize_one(pdf,trim,texts,sums,keys,lang,wk,sk) :
 
     nlp = NLP(lang=lang)
     nlp.from_file(tname0)
-    kws, sents, _ = nlp.info(wk, sk)
+    kws, sents, _ = nlp.info()
 
     ktext = "\n".join(kws)
     ensure_path(kname)
@@ -91,9 +92,10 @@ def  summarize_all(
     sums="out/sums/",
     keys="out/keys/",
     lang='en',
-    wk=10,
-    sk=8) :
+   ) :
   """ sequential summarizer"""
+  wk=PARAMS['k_count']
+  sk=PARAMS['s_count']
   if rootdir:
     rootdir=os.path.abspath(rootdir)+"/"
     names=(pdfs,overview,texts,sums,keys)
@@ -119,10 +121,10 @@ def parsum_all(
     texts="out/pdftexts/",
     sums="out/sums/",
     keys="out/keys/",
-    lang='en',
-    wk=10,
-    sk=8):
+    lang='en'):
   """ parallel summarizer"""
+  sk=PARAMS['s_count']
+  wk=PARAMS['k_count']
   if rootdir:
     rootdir=os.path.abspath(rootdir)+"/"
     names=(pdfs,overview,texts,sums,keys)
