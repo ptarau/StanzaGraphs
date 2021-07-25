@@ -4,15 +4,11 @@ import os
 import math
 import networkx as nx
 from visualizer import gshow
-import langid
 from collections import defaultdict
 
 from params import *
 from rankers import ranker_dict
 from translator import translate
-
-def detect_lang(text):
-  return langid.classify(text)[0]
 
 class NLP :
   """
@@ -25,7 +21,8 @@ class NLP :
   """
 
   def __init__(self,lang=None):
-    ensure_path("out/")
+    self.out=PARAMS['OUTPUT_DIRECTORY']
+    ensure_path(self.out)
     ensure_path("pics/")
     self.set_language(lang=lang)
 
@@ -178,11 +175,11 @@ class NLP :
  '''
 
   def to_tsv(self): # writes out edges to .tsv file
-    facts2tsv(self.facts(),"out/"+self.fname+".tsv")
+    facts2tsv(self.facts(),self.out+self.fname+".tsv")
     self.to_sents()
 
   def to_prolog(self): # writes out edges to Prolog file
-    facts2prolog(self.facts(),"out/"+self.fname+".pro")
+    facts2prolog(self.facts(),self.out+self.fname+".pro")
 
   def get_sent(self,sid) :
     return self.doc.sentences[sid].text
@@ -192,7 +189,7 @@ class NLP :
     def sent_gen() :
        for sid,sent in enumerate(self.doc.sentences):
          yield sid,sent.text
-    facts2tsv(sent_gen(),"out/"+self.fname+"_sents.tsv")
+    facts2tsv(sent_gen(),self.out+self.fname+"_sents.tsv")
 
 
   def summarize(self) : # extract summary and keywords

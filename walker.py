@@ -1,14 +1,10 @@
 import glob
 import os
 import sys
-import subprocess
 from summarizer import exists_file, ensure_path, NLP
 from nltk.tokenize import sent_tokenize, word_tokenize
 from multiprocessing import Process, Pool, cpu_count
 from params import *
-
-def pdf2txt(pdf,txt):
-  subprocess.run(["pdftotext", "-q",pdf,txt])
 
 def file2string(fname):
   with open(fname,'r') as f:
@@ -18,10 +14,11 @@ def string2file(text,fname) :
   with open(fname,'w') as g:
     g.write(text)
 
-def clean_text_file(fname,lang='en') :
-  if lang!='en': return
+def clean_text_file(fname) :
   #print('cleaning: '+fname)
   data = file2string(fname)
+  lang=detect_lang(data)
+  if lang != 'en': return
   texts=sent_tokenize(data)
   clean=[]
   for text in texts :
@@ -43,6 +40,7 @@ def walk(dir="./"):
   for filename in sorted(set(
         glob.iglob(dir + '**/**', recursive=True))):
      yield filename
+
 
 def summarize_one(pdf,trim,texts,sums,keys,lang,wk,sk) :
   ''' summarizer for one document'''
@@ -87,15 +85,15 @@ def summarize_one(pdf,trim,texts,sums,keys,lang,wk,sk) :
 def  summarize_all(
     rootdir=None,
     pdfs="pdfs/",
-    overview="out/overview.txt",
-    texts="out/pdftexts/",
-    sums="out/sums/",
-    keys="out/keys/",
     lang='en',
    ) :
   """ sequential summarizer"""
+
+  overview,texts,sums,keys=out_dirs()
+
   wk=PARAMS['k_count']
   sk=PARAMS['s_count']
+
   if rootdir:
     rootdir=os.path.abspath(rootdir)+"/"
     names=(pdfs,overview,texts,sums,keys)
@@ -117,14 +115,13 @@ def sum_one(args) :
 def parsum_all(
     rootdir=None,
     pdfs="pdfs/",
-    overview="out/overview.txt",
-    texts="out/pdftexts/",
-    sums="out/sums/",
-    keys="out/keys/",
     lang='en'):
   """ parallel summarizer"""
   sk=PARAMS['s_count']
   wk=PARAMS['k_count']
+
+  overview, texts, sums, keys = out_dirs()
+
   if rootdir:
     rootdir=os.path.abspath(rootdir)+"/"
     names=(pdfs,overview,texts,sums,keys)

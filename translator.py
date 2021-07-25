@@ -1,3 +1,5 @@
+# alternative translators, if needed
+
 """
 from deep_translator import (GoogleTranslator,
                              PonsTranslator,
@@ -11,8 +13,6 @@ from deep_translator import (GoogleTranslator,
                              """
 from deep_translator import GoogleTranslator
 from params import *
-
-TARGET_LANG='en'
 
 def translate(text,source_lang='auto',target_lang=None) :
   try:

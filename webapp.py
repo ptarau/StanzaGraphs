@@ -1,7 +1,7 @@
 import streamlit as st
+from params import *
 from summarizer import *
 from answerer import Query
-from walker import pdf2txt
 
 st.set_page_config(layout="wide")
 
@@ -10,8 +10,6 @@ st.title('StanzaGraph: Multilingual Summary and Keyword Extractor and Question-A
 left,right=st.beta_columns((1,1))
 
 uploaded_file = st.sidebar.file_uploader('Select a File', type=['txt', 'pdf'])
-
-UPLOAD_DIRECTORY = "uploads/"
 
 def handle_uploaded() :
   if uploaded_file is None : return None
@@ -22,6 +20,7 @@ def handle_uploaded() :
     pname = fname + ".pdf"
     tname = fname + ".txt"
     pdf2txt(pname, tname)
+    clean_text_file(tname)
     return fname
   elif suf == '.txt':
     return fname
@@ -30,12 +29,11 @@ def handle_uploaded() :
       st.write('Please upload a .txt or a .pdf file!')
 
 def save_uploaded_file():
+    upload_dir=PARAMS['UPLOAD_DIRECTORY']
     fname = uploaded_file.name
-    fpath = os.path.join(UPLOAD_DIRECTORY, fname)
+    fpath = os.path.join(upload_dir, fname)
     if exists_file(fpath) : return fpath
-
-    ensure_path(UPLOAD_DIRECTORY)
-
+    ensure_path(upload_dir)
     with open(fpath, "wb") as f:
       f.write(uploaded_file.getbuffer())
     return fpath
@@ -44,9 +42,9 @@ summarize = st.sidebar.button('Summarize it!')
 
 with st.sidebar :
   with st.form('Query'):
-    question = st.text_input(
+    question = st.text_area(
       'Enter your question here:',
-      "What is Penrose's 1965 paper about?")
+      "")
 
     query = st.form_submit_button('Submit your question!')
     if query:
