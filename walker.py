@@ -36,9 +36,9 @@ def clean_text_file(fname) :
   new_data="\n".join(clean)
   string2file(new_data,fname)
 
-def walk(dir="./"):
+def walk(wdir="./"):
   for filename in sorted(set(
-        glob.iglob(dir + '**/**', recursive=True))):
+        glob.iglob(wdir + '**/**', recursive=True))):
      yield filename
 
 

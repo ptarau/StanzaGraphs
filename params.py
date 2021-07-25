@@ -1,11 +1,15 @@
 
 import subprocess
 import json
+import sys
+import os
+from inspect import getframeinfo, stack
 
 import langid
 
 PARAMS=dict(
-  TARGET_LANG='fr',
+  TRACE=1,
+  TARGET_LANG='en', # tried zh,fr,sp,de,hu,ro,ar,el,la,it,ru,ja
   RANKER='betweenness',
   UPLOAD_DIRECTORY='uploads/',
   OUTPUT_DIRECTORY='out/',
@@ -49,3 +53,32 @@ def from_json(fname) :
   with open(fname, "r") as inf:
     obj = json.load(inf)
     return obj
+
+
+def ppp(*args,**kwargs) :
+  """
+  logging mechanism with possible DEBUG extras
+  will tell from which line in which file the printed
+  messge orginates from
+  """
+  if PARAMS["TRACE"] < 1: return
+  if PARAMS["TRACE"] >= 1 :
+    caller = getframeinfo(stack()[1][0])
+    print('DEBUG:',
+        caller.filename.split('/')[-1],
+        '->', caller.lineno, end=': ')
+  print(*args, **kwargs)
+
+
+"""
+def force_quiet(fun,*args,**kwargs) :
+  sout=sys.stdout
+  serr = sys.stderr
+  f = open(os.devnull, 'w')
+  sys.stdout = f
+  sys.stderr = f
+  result=fun(*args,**kwargs)
+  sys.stdout = sout
+  sys.stderr = serr
+  return result
+"""

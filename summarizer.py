@@ -33,7 +33,9 @@ class NLP :
 
     if not exists_file(home_dir() + '/stanza_resources/' + lang):
       stanza.download(lang)
+
     self.nlp = stanza.Pipeline(lang=lang, logging_level='ERROR')
+
 
   def detect_language(self,text):
     detected=detect_lang(text)

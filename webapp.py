@@ -2,6 +2,7 @@ import streamlit as st
 from params import *
 from summarizer import *
 from answerer import Query
+from walker import clean_text_file
 
 st.set_page_config(layout="wide")
 
