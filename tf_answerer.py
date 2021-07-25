@@ -43,8 +43,8 @@ class Inferencer(Query) :
   loads model trained on associating dependency
   edges to sentences in which they occur
   '''
-  def __init__(self,fname='texts/english',lang='en'):
-    super().__init__(fname=fname,lang=lang)
+  def __init__(self,fname='texts/english'):
+    super().__init__(fname=fname)
     self.model = load_model("out/"+fname+"_model")
 
   def query(self,text=None):
@@ -60,7 +60,7 @@ class Inferencer(Query) :
     y=self.model.predict(hot_X)
     #print('@@@',y.shape)
     m=self.enc_y.inverse_transform(y)
-    sids=m.flatten().tolist()
+    sids=set(m.flatten().tolist())
     self.show_answers(sids)
 
 # VISUALS

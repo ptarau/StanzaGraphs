@@ -1,4 +1,4 @@
-from  summarizer import exists_file,process_file,NLP,file2text,detect_lang
+from  summarizer import exists_file,process_file,NLP,file2text
 from params import *
 
 from translator import translate
@@ -87,7 +87,7 @@ class Query(Data) :
     self.nlp_engine=NLP()
 
 
-  def query(self,text=None,k=3):
+  def get_answers(self,text=None,k=3):
     """
     compute a similarity between
     set of edges in query and each sentence,
@@ -131,11 +131,23 @@ class Query(Data) :
     elif not interactive: print("Query:",text)
 
 
-    answers=list(self.query(text=text))
+    answers=[sent for (_,sent) in self.get_answers(text=text)]
+    self.print_answers(answers)
+
+  def print_answers(self,answers):
     print('')
-    for sid,sent in answers :
-      print(sid,':',sent)
+    for sent in answers:
+      print(sent)
     print('')
+
+  def show_answers(self,sids):
+    print('')
+    for sid in sids:
+      sid, sent = self.sents[sid]
+      sent=translate(sent,source_lang=self.lang)
+      print(sent)
+    print('')
+
 
   def interact(self):
     while True:

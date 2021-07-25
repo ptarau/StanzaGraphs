@@ -1,9 +1,7 @@
 import glob
-import os
-import sys
 from summarizer import exists_file, ensure_path, NLP
 from nltk.tokenize import sent_tokenize, word_tokenize
-from multiprocessing import Process, Pool, cpu_count
+from multiprocessing import Pool, cpu_count
 from params import *
 
 def file2string(fname):
@@ -42,8 +40,9 @@ def walk(wdir="./"):
      yield filename
 
 
-def summarize_one(pdf,trim,texts,sums,keys,lang,wk,sk) :
-  ''' summarizer for one document'''
+def summarize_one(pdf,trim,texts,sums,keys,lang) :
+  """ summarizer for one document
+  """
   if pdf[-4:].lower() != ".pdf": return None
 
   name = pdf[trim:-4]
@@ -58,7 +57,7 @@ def summarize_one(pdf,trim,texts,sums,keys,lang,wk,sk) :
     print('START processing:', pdf)
     if not exists_file(tname) :
       pdf2txt(pdf, tname)
-      clean_text_file(tname, lang=lang)
+      clean_text_file(tname)
 
     nlp = NLP(lang=lang)
     nlp.from_file(tname0)
@@ -91,9 +90,6 @@ def  summarize_all(
 
   overview,texts,sums,keys=out_dirs()
 
-  wk=PARAMS['k_count']
-  sk=PARAMS['s_count']
-
   if rootdir:
     rootdir=os.path.abspath(rootdir)+"/"
     names=(pdfs,overview,texts,sums,keys)
@@ -101,8 +97,8 @@ def  summarize_all(
   ensure_path(overview)
   with open(overview,'w') as outf :
     trim = len(pdfs)
-    for pdf in walk(dir=pdfs):
-      text=summarize_one(pdf, trim, texts, sums, keys, lang, wk, sk)
+    for pdf in walk(wdir=pdfs):
+      text=summarize_one(pdf, trim, texts, sums, keys, lang)
       if not text : continue
       print(text, file=outf)
       #print(text)
@@ -130,7 +126,7 @@ def parsum_all(
   count = max(2,cpu_count() // 3)
   with Pool(processes=count) as pool:
     trim = len(pdfs)
-    fs=[pdf for pdf in walk(dir=pdfs) if pdf[-4:].lower() == ".pdf"]
+    fs=[pdf for pdf in walk(wdir=pdfs) if pdf[-4:].lower() == ".pdf"]
     l=len(fs)
     chunksize=1 #max(1,int(l/(4*count)))
     print('pdf files:',l,'processes:',count,'chunksize:',chunksize)

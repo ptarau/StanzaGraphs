@@ -1,13 +1,13 @@
 numpy>=1.18.5
 networkx>=2.5
 matplotlib>=3.3.1
-stanza>=1.1.1
+stanza>=1.2.2
 graphviz>=0.14.1
 tensorflow>=2.2.0
 skorch>=0.9.0
 scikit-learn>=0.23.2
 torch>=1.7.0
 nltk>=3.5
-streamlit>=0.75
+streamlit>=0.85
 langid
 deep-translator

@@ -79,7 +79,7 @@ def do_query():
   q = Query(fname=fname)
   with left:
     st.write('Answers:')
-    answers=list(q.query(question))
+    answers=list(q.get_answers(question))
     if not answers :
       st.write(translate("I do not know."))
     else:

@@ -92,8 +92,8 @@ class SkorchTrainer :
     self.classifier.fit(X,y)
 
 class SkorchAnswerer(Inferencer) :
-  def __init__(self, fname='texts/english', lang='en'):
-    super().__init__(fname=fname, lang=lang)
+  def __init__(self, fname='texts/english'):
+    super().__init__(fname=fname)
     #self.trainer = self.make_trainer(self.hot_X, self.hot_y)
 
   def make_trainer(self, X, y):

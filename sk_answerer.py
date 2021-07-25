@@ -30,8 +30,8 @@ class Inferencer(Query) :
   edges to sentences in which they occur
   '''
 
-  def __init__(self,fname='texts/english',lang='en'):
-    super().__init__(fname=fname,lang=lang)
+  def __init__(self,fname='texts/english'):
+    super().__init__(fname=fname)
     self.trainer=self.make_trainer(self.hot_X,self.hot_y)
 
   def make_trainer(self, X, y):
@@ -55,7 +55,7 @@ class Inferencer(Query) :
 
     m=self.enc_y.inverse_transform(y)
     sids=m.flatten().tolist()
-    sids=[x for x in sids  if x!=None]
+    sids={x for x in sids  if x!=None}
     self.show_answers(sids)
 
   def interact(self):
