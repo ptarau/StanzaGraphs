@@ -63,6 +63,14 @@ class NLP :
   def get_text(self):
     return self.doc.text
 
+  def cache_name(self):
+    if not PARAMS['CACHING'] : return None
+    d= PARAMS['OUTPUT_DIRECTORY']+'CACHE/'
+    f=d+self.fname+'_info_'+PARAMS['TARGET_LANG']+'.json'
+    ensure_path(f)
+    return f
+
+
   def facts(self):
     """generates <from,from_tag,relation,to_tag,to,sentence_id> tuples"""
     first_occ=dict()
@@ -124,8 +132,16 @@ class NLP :
 
 
   def info(self):
+    cname=self.cache_name()
+    print(cname)
+    if cname and exists_file(cname) :
+      sents,kwds=from_json(cname)
+      return kwds,sents,None
+
     wk=PARAMS['k_count']
     sk=PARAMS['s_count']
+
+
 
     """extract keywords and summary sentences"""
 
@@ -161,6 +177,7 @@ class NLP :
     sents=map(self.get_sent,sorted(sids))
     sents=[translate(s,source_lang=self.lang) for s in sents]
 
+    if cname: to_json((sents,kwds),cname)
 
     return kwds,sents,picg
 

@@ -80,7 +80,7 @@ def do_query():
     st.write('Answers:')
     answers=list(q.query(question))
     if not answers :
-      st.write("I do not know.")
+      st.write(translate("I do not know."))
     else:
       for (_,sent) in answers:
          st.write(sent)

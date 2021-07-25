@@ -1,4 +1,6 @@
 from  summarizer import exists_file,process_file,NLP,file2text,detect_lang
+from params import *
+
 from translator import translate
 
 import csv
@@ -21,7 +23,7 @@ class Data :
   tags concatenated
   """
   def __init__(self,fname=None) :
-    edge_file="out/"+fname+".tsv"
+    edge_file=PARAMS['OUTPUT_DIRECTORY']+fname+".tsv"
     if not exists_file(edge_file) :
       nlp=process_file(fname=fname)
       self.lang=nlp.lang
@@ -31,7 +33,7 @@ class Data :
 
     wss = tsv2mat(edge_file)
 
-    self.sents=tsv2mat("out/"+fname+"_sents.tsv")
+    self.sents=tsv2mat(PARAMS['OUTPUT_DIRECTORY']+fname+"_sents.tsv")
     occs=defaultdict(set)
     sids=set()
     lens=[]
@@ -83,7 +85,6 @@ class Query(Data) :
   def __init__(self,fname=None):
     super().__init__(fname=fname)
     self.nlp_engine=NLP()
-
 
 
   def query(self,text=None,k=3):
