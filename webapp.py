@@ -20,9 +20,11 @@ def handle_uploaded() :
   if suf == '.pdf':
     pname = fname + ".pdf"
     tname = fname + ".txt"
-    pdf2txt(pname, tname)
-    clean_text_file(tname)
-    return fname
+    if pdf2txt(pname, tname) and clean_text_file(tname):
+      return fname
+    else :
+      with right:
+        st.write('Conversion to text file failed!')
   elif suf == '.txt':
     return fname
   else:

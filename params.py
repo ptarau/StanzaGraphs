@@ -1,5 +1,6 @@
 
 import subprocess
+import os
 import json
 from inspect import getframeinfo, stack
 
@@ -30,6 +31,11 @@ def out_dirs() :
 
 def pdf2txt(pdf,txt):
   subprocess.run(["pdftotext", "-q",pdf,txt])
+  if os.path.getsize(txt) > 32 :
+    return True
+  os.remove(txt)
+  return False
+
 
 def detect_lang(text):
   return langid.classify(text)[0]

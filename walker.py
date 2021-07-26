@@ -17,6 +17,10 @@ def string2file(text,fname) :
 def clean_text_file(fname) :
   #print('cleaning: '+fname)
   data = file2string(fname)
+  if len(data) < 100 :
+    s=[x for x in data if x!=' ']
+    if len(s) < 10:
+      return False
   lang=detect_lang(data)
   if lang != 'en': return
   texts=sent_tokenize(data)
@@ -35,6 +39,7 @@ def clean_text_file(fname) :
     clean.append(sent)
   new_data="\n".join(clean)
   string2file(new_data,fname)
+  return True
 
 def walk(wdir="./"):
   for filename in sorted(set(
@@ -57,10 +62,9 @@ def summarize_one(pdf,trim,texts,sums,keys,lang) :
   ensure_path(tname)
   try:
     print('START processing:', pdf)
-    if not exists_file(tname) :
-      pdf2txt(pdf, tname)
-      clean_text_file(tname)
-
+    if not (pdf2txt(pdf, tname) and clean_text_file(tname)) :
+      print('Unable to convert from PDF, skipping file!')
+      return None
     nlp = NLP(lang=lang)
     nlp.from_file(tname0)
     kws, sents, _ = nlp.info()
@@ -80,7 +84,7 @@ def summarize_one(pdf,trim,texts,sums,keys,lang) :
     return text
   except:
     print('ERROR:',sys.exc_info()[0])
-    print('processing failed on:', pdf)
+    print('Processing failed on:', pdf)
     return None
 
 def  summarize_all(
@@ -145,7 +149,7 @@ if __name__=="__main__":
   params=dict(
     # rootdir = "/Users/tarau/Desktop/sit/GRAPHSTAX/",
     # pdfs = "biblion/"
-    rootdir= "/home/tarau/Documents/",
+    rootdir= "/Users/tarau/Desktop/paps/",
     pdfs = "Papers/"
     #rootdir = "/Users/tarau/Desktop/sit/MISC/",
     #pdfs="sienna2021/"
@@ -153,6 +157,6 @@ if __name__=="__main__":
   )
   #summarize_all()
   # parsum_all()
-  summarize_all(**params)
+  #summarize_all(**params)
 
-  #parsum_all(**params)
+  parsum_all(**params)
