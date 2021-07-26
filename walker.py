@@ -1,4 +1,6 @@
 import glob
+import os
+import sys
 from summarizer import exists_file, ensure_path, NLP
 from nltk.tokenize import sent_tokenize, word_tokenize
 from multiprocessing import Pool, cpu_count
@@ -113,8 +115,7 @@ def parsum_all(
     pdfs="pdfs/",
     lang='en'):
   """ parallel summarizer"""
-  sk=PARAMS['s_count']
-  wk=PARAMS['k_count']
+
 
   overview, texts, sums, keys = out_dirs()
 
@@ -130,7 +131,7 @@ def parsum_all(
     l=len(fs)
     chunksize=1 #max(1,int(l/(4*count)))
     print('pdf files:',l,'processes:',count,'chunksize:',chunksize)
-    args=[(pdf,trim, texts, sums, keys, lang, wk, sk) for pdf in fs]
+    args=[(pdf,trim, texts, sums, keys, lang) for pdf in fs]
     ensure_path(overview)
     with open(overview,'w') as outf:
       for text in pool.imap(sum_one,args,chunksize=chunksize):
@@ -144,11 +145,14 @@ if __name__=="__main__":
   params=dict(
     # rootdir = "/Users/tarau/Desktop/sit/GRAPHSTAX/",
     # pdfs = "biblion/"
-    rootdir = "/Users/tarau/Desktop/sit/MISC/",
-    pdfs="sienna2021/"
+    rootdir= "/home/tarau/Documents/",
+    pdfs = "Papers/"
+    #rootdir = "/Users/tarau/Desktop/sit/MISC/",
+    #pdfs="sienna2021/"
 
   )
-  summarize_all()
-  #summarize_all(**params)
-  #parsum_all()
+  #summarize_all()
+  # parsum_all()
+  summarize_all(**params)
+
   #parsum_all(**params)
