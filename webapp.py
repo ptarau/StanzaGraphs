@@ -1,8 +1,9 @@
 import streamlit as st
 from params import *
-from summarizer import *
+from summarizer import Summarizer
 from answerer import Query
 from walker import clean_text_file
+from translator import translate
 
 st.set_page_config(layout="wide")
 
@@ -61,7 +62,7 @@ def do_summary():
   fname = handle_uploaded()
   if not fname : st.write('Please upload a file!')
 
-  nlp = NLP()
+  nlp = Summarizer()
   nlp.from_file(fname)
 
   kws, sents, picg = nlp.info()

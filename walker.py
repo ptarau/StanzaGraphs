@@ -1,7 +1,6 @@
 import glob
-import os
 import sys
-from summarizer import exists_file, ensure_path, NLP
+from summarizer import ensure_path, Summarizer
 from nltk.tokenize import sent_tokenize, word_tokenize
 from multiprocessing import Pool, cpu_count
 from params import *
@@ -65,7 +64,7 @@ def summarize_one(pdf,trim,texts,sums,keys,lang) :
     if not (pdf2txt(pdf, tname) and clean_text_file(tname)) :
       print('Unable to convert from PDF, skipping file!')
       return None
-    nlp = NLP(lang=lang)
+    nlp = Summarizer(lang=lang)
     nlp.from_file(tname0)
     kws, sents, _ = nlp.info()
 

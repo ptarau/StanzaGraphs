@@ -1,4 +1,4 @@
-from  summarizer import exists_file,process_file,NLP,file2text
+from  summarizer import exists_file,process_file,Summarizer,file2text
 from params import *
 
 from translator import translate
@@ -84,7 +84,7 @@ class Query(Data) :
   """
   def __init__(self,fname=None):
     super().__init__(fname=fname)
-    self.nlp_engine=NLP()
+    self.nlp_engine=Summarizer()
 
 
   def get_answers(self,text=None,k=3):

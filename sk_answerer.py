@@ -1,7 +1,7 @@
-from sklearn.metrics import roc_auc_score
 from sklearn.ensemble import RandomForestClassifier
+from params import *
 import numpy as np
-from answerer import Data,Query
+from answerer import Query
 
 class Trainer :
   def __init__(self, hot_X,hot_y):
@@ -25,10 +25,10 @@ class ScaledTrainer :
 
 
 class Inferencer(Query) :
-  '''
+  """
   loads model trained on associating dependency
   edges to sentences in which they occur
-  '''
+  """
 
   def __init__(self,fname='texts/english'):
     super().__init__(fname=fname)
@@ -38,7 +38,7 @@ class Inferencer(Query) :
       return ScaledTrainer(X, y)
 
   def query(self,text=None):
-    ''' answers queries based on model built by Trainer'''
+    """ answers queries based on model built by Trainer"""
     if not text: text = input("Query: ")
     else: print("Query:", text)
     self.nlp_engine.from_text(text)
@@ -51,7 +51,7 @@ class Inferencer(Query) :
 
     #print('@@@@',hot_X.shape)
     y=np.array(self.trainer.classifier.predict(hot_X))
-    #print('!!!',y.shape,y)
+    ppp('!!!',y.shape,y)
 
     m=self.enc_y.inverse_transform(y)
     sids=m.flatten().tolist()

@@ -59,6 +59,19 @@ def from_json(fname) :
     return obj
 
 
+def exists_file(fname) :
+  """ if it exists as file or dir"""
+  return os.path.exists(fname)
+
+def home_dir() :
+  from pathlib import Path
+  return str(Path.home())
+
+def ensure_path(fname) :
+  folder,_=os.path.split(fname)
+  os.makedirs(folder, exist_ok=True)
+
+
 def ppp(*args,**kwargs) :
   """
   logging mechanism with possible DEBUG extras

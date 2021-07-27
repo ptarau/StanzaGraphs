@@ -3,6 +3,7 @@ from sklearn.datasets import make_classification
 from torch import nn
 import torch
 import skorch
+from params import *
 from answerer import Data
 from sk_answerer import Trainer, Inferencer
 
@@ -29,7 +30,7 @@ class ClassifierModule(nn.Module):
     self.dense1 = nn.Linear(num_units, num_units)
     self.output = nn.Linear(num_units, 2)
 
-  def forward(self, X, **kwargs):
+  def forward(self, X):
     X = self.nonlin(self.dense0(X))
     #X = self.dropout(X)
     X = self.nonlin(self.dense1(X))
@@ -46,6 +47,7 @@ class TorchClassifier :
   def fit(self,X,y,**fit_params):
     X=X.astype(np.float32)
     y=y.astype(np.int64)
+
     ClassifierModule.Xsize = X.shape[-1]
     ClassifierModule.ysize = y.shape[-1]
 
@@ -74,10 +76,16 @@ class TorchClassifier :
     # TODO - this is just a sketch - NOT RIGHT
     for i in range(l):
       p[i] = nets[i].predict_proba(X)
-      prob = np.sum(p, axis=-1)
-      prob = prob / l
-    #print(prob)
+    p=np.array(p)
+    #ppp(p.shape)
+    prob = np.mean(p, axis=-1)
+    prob = prob / l
+
     prob=np.array((prob,))
+    #prob.reshape((1,-1))
+
+    #ppp(prob.shape)
+
     return prob
 
 

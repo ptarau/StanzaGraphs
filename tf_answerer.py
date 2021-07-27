@@ -6,9 +6,9 @@ from tensorflow.keras import layers
 from tensorflow.keras.models import load_model
 
 class Trainer(Data) :
-  '''
+  """
   simple keras neural network trainer and model builder
-  '''
+  """
   def __init__(self,fname='texts/english',activation='sigmoid'):
     nlp.ensure_path("out/")
     nlp.ensure_path("pics/")
@@ -39,16 +39,16 @@ class Trainer(Data) :
     print('Accuracy:', round(100 * accuracy, 2), ', % Loss:', round(100 * loss, 2), '%')
 
 class Inferencer(Query) :
-  '''
+  """
   loads model trained on associating dependency
   edges to sentences in which they occur
-  '''
+  """
   def __init__(self,fname='texts/english'):
     super().__init__(fname=fname)
     self.model = load_model("out/"+fname+"_model")
 
   def query(self,text=None):
-    ''' answers queries based on model built by Trainer'''
+    """ answers queries based on model built by Trainer"""
     if not text: text = input("Query:")
     else: print("Query:", text)
     self.nlp_engine.from_text(text)
@@ -79,8 +79,8 @@ def plot_graphs(fname,history, metric):
   plt.close()
 
 def ntest() :
-  ''' tests symbolic and neural QA on given document '''
-  t=Trainer()
+  """ tests symbolic and neural QA on given document """
+  #t=Trainer()
   i=Inferencer()
   print("\n\n")
   print("ALGORITHMICALLY DERIVED ANSWERS:\n")

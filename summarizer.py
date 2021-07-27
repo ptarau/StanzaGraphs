@@ -1,6 +1,5 @@
 import stanza
 import csv
-import os
 import math
 import networkx as nx
 from visualizer import gshow
@@ -10,9 +9,9 @@ from params import *
 from rankers import ranker_dict
 from translator import translate
 
-class NLP :
+class Summarizer :
   """
-  stanza-based multi-lingual NLP processor
+  Stanza-based multi-lingual NLP processor
   that extracts summaries and keywords
   and builds text graph edge files derived
   from dependency links usable donwstream
@@ -303,21 +302,8 @@ def facts2prolog(fgen,fname) :
       print('edge',end='',file=f)
       print(fact,end=".\n",file=f)
 
-def exists_file(fname) :
-  """ if it exists as file or dir"""
-  return os.path.exists(fname)
-
-def home_dir() :
-  from pathlib import Path
-  return str(Path.home())
-
-def ensure_path(fname) :
-  folder,_=os.path.split(fname)
-  os.makedirs(folder, exist_ok=True)
-
-
 def process_file(fname=None) :
-  nlp = NLP()
+  nlp = Summarizer()
   nlp.from_file(fname)
   nlp.to_tsv()
   return nlp
@@ -325,7 +311,7 @@ def process_file(fname=None) :
 # TESTS
 
 def test(fname='texts/english') :
-  nlp=NLP()
+  nlp=Summarizer()
   nlp.from_file(fname)
   nlp.summarize()
   nlp.to_prolog()
