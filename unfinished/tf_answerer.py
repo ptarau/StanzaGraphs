@@ -1,4 +1,5 @@
 from answerer import Data,Query
+from params import *
 import summarizer as nlp
 import numpy as np
 from tensorflow import keras
@@ -58,9 +59,10 @@ class Inferencer(Query) :
     X = np.array(X)
     hot_X = self.enc_X.transform(X).toarray()
     y=self.model.predict(hot_X)
-    #print('@@@',y.shape)
+    ppp('@@@',y)
     m=self.enc_y.inverse_transform(y)
     sids=set(m.flatten().tolist())
+    ppp('SENTECE IDS:',sids)
     self.show_answers(sids)
 
 # VISUALS
@@ -80,7 +82,7 @@ def plot_graphs(fname,history, metric):
 
 def ntest() :
   """ tests symbolic and neural QA on given document """
-  #t=Trainer()
+  t=Trainer()
   i=Inferencer()
   print("\n\n")
   print("ALGORITHMICALLY DERIVED ANSWERS:\n")
