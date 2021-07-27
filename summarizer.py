@@ -135,8 +135,9 @@ class NLP :
 
   def info(self):
     cname=self.cache_name()
-    print(cname)
+
     if cname and exists_file(cname) :
+      print('FROM CACHED: ',cname)
       sents,kwds=from_json(cname)
       return kwds,sents,None
 
@@ -179,8 +180,11 @@ class NLP :
     sents=map(self.get_sent,sorted(sids))
     sents=[translate(s,source_lang=self.lang) for s in sents]
 
-    if cname: to_json((sents,kwds),cname)
+    if cname:
+      print('CACHING TO: ', cname)
+      to_json((sents,kwds),cname)
 
+    self.to_tsv()
     return kwds,sents,picg
 
   def to_nx(self): # converts to networkx graph
@@ -323,9 +327,8 @@ def process_file(fname=None) :
 def test(fname='texts/english') :
   nlp=NLP()
   nlp.from_file(fname)
-  nlp.to_tsv()
-  nlp.to_prolog()
   nlp.summarize()
+  nlp.to_prolog()
 
 if __name__=="__main__" :
   test(fname='texts/english')

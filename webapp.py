@@ -41,12 +41,15 @@ def save_uploaded_file():
       f.write(uploaded_file.getbuffer())
     return fpath
 
+target_lang=st.sidebar.text_input('Language you are familiar with (as a 2 letter code):','en')
+PARAMS['TARGET_LANG']=target_lang
+
 summarize = st.sidebar.button('Summarize it!')
 
 with st.sidebar :
   with st.form('Query'):
     question = st.text_area(
-      'Enter your question here:',
+      'Enter a question in your language here:',
       "")
 
     query = st.form_submit_button('Submit your question!')
