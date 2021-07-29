@@ -49,8 +49,7 @@ def clean_text_file(fname):
 
 
 def walk(wdir="./"):
-    for filename in sorted(set(
-        glob.iglob(wdir + '**/**', recursive=True))):
+    for filename in sorted(set(glob.iglob(wdir + '**/**', recursive=True))):
         yield filename
 
 
@@ -89,9 +88,13 @@ def summarize_one(pdf, trim, texts, sums, keys, lang):
             ['FILE:', pdf, '\nSUMMARY:', stext, '\nKEYWORDS:', ktext, '\n'])
         print('DONE processing:', pdf)
         return text
-    except:
+    except IndexError
         print('ERROR:', sys.exc_info()[0])
         print('Processing failed on:', pdf)
+        return None
+    except ValueError:
+        return None
+    except RuntimeError:
         return None
 
 
@@ -123,10 +126,7 @@ def sum_one(args):
     return summarize_one(*args)
 
 
-def parsum_all(
-    rootdir=None,
-    pdfs="pdfs/",
-    lang='en'):
+def parsum_all(rootdir=None, pdfs="pdfs/", lang='en'):
     """ parallel summarizer"""
 
     overview, texts, sums, keys = out_dirs()
@@ -140,9 +140,9 @@ def parsum_all(
     with Pool(processes=count) as pool:
         trim = len(pdfs)
         fs = [pdf for pdf in walk(wdir=pdfs) if pdf[-4:].lower() == ".pdf"]
-        l = len(fs)
+        pdf_count = len(fs)
         chunksize = 1  # max(1,int(l/(4*count)))
-        print('pdf files:', l, 'processes:', count, 'chunksize:', chunksize)
+        print('pdf files:', pdf_count, 'processes:', count, 'chunksize:', chunksize)
         args = [(pdf, trim, texts, sums, keys, lang) for pdf in fs]
         ensure_path(overview)
         with open(overview, 'w') as outf:
@@ -158,13 +158,14 @@ if __name__ == "__main__":
     params = dict(
         # rootdir = "/Users/tarau/Desktop/sit/GRAPHSTAX/",
         # pdfs = "biblion/"
-        rootdir="/Users/tarau/Desktop/paps/",
-        pdfs="Papers/"
+        #rootdir="/Users/tarau/Desktop/paps/",
+        rootdir="/Users/tarau/Desktop/www/",
+        pdfs="research/"
         # rootdir = "/Users/tarau/Desktop/sit/MISC/",
         # pdfs="sienna2021/"
 
     )
-    # summarize_all()
+    #summarize_all()
     # parsum_all()
     # summarize_all(**params)
 

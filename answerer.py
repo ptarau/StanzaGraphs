@@ -159,7 +159,7 @@ class Query(Data):
             self.ask(text=text, interactive=True)
 
 
-### TESTS ###
+# TESTS
 
 def qtest():
     q = Query(fname='texts/english')

@@ -55,8 +55,7 @@ class Summarizer:
 
     def is_keynoun(self, x):
         """true for "important" nouns"""
-        ok = x.upos in ('NOUN', 'PROPN') and \
-             ('subj' in x.deprel or 'ob' in x.deprel)
+        ok = x.upos in ('NOUN', 'PROPN') and ('subj' in x.deprel or 'ob' in x.deprel)
         if self.lang == 'en': ok = ok and len(x.lemma) > 3
         return ok
 
@@ -82,7 +81,7 @@ class Summarizer:
                 if self.is_keynoun(x):  # reverse link to prioritize key nouns
                     yield hw.lemma, hw.upos, "rev_" + x.deprel, x.upos, x.lemma, sid
                     yield (sid, 'SENT', 'ABOUT', x.upos, x.lemma, sid)
-                    if not x.lemma in first_occ:
+                    if x.lemma not in first_occ:
                         first_occ[(x.lemma, x.upos)] = sid
                         yield (x.lemma, x.upos, 'DEFINED_IN', 'SENT', sid, sid)
                 else:
@@ -116,7 +115,7 @@ class Summarizer:
             ws = list(sent.words)
             good = ('NOUN', 'ADJ')
             for i, w in enumerate(ws):
-                if not w.upos in good: continue
+                if w.upos not in good: continue
                 if i == 0 or i + 1 == len(ws): continue
                 prev_w = ws[i - 1]
                 next_w = ws[i + 1]
@@ -151,7 +150,7 @@ class Summarizer:
 
         def rank_phrase(pair):
             sid, ws = pair
-            if not sid in ranks: return 0, ws
+            if sid not in ranks: return 0, ws
             r = sum(ranks[x] for x in ws if x in ranks)
             r = r * (ranks[sid] / (1 + math.log(1 + len(ws))))
             # r=ranks[sid]
@@ -244,7 +243,7 @@ def good_sent(x, lang):
     if len(x) < 10: return False
     if not x[-1] in ".": return False
     if not x[0].isupper(): return False
-    bad = sum(1 for _ in x if x.isdigit() or x in "@#$%^&*()[]{}-=+_;':<>/\|~.")
+    bad = sum(1 for _ in x if x.isdigit() or x in "@#$%^&*()[]{}-=+_;':<>/|~.")
     if bad > len(x) / 10:
         # print('!!!!', bad, x)
         return False

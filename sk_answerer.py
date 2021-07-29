@@ -3,17 +3,13 @@ from sklearn.ensemble import RandomForestClassifier
 
 from answerer import Query
 from params import *
-
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 
 class Trainer:
     def __init__(self, hot_X, hot_y):
         self.classifier = RandomForestClassifier(n_estimators=100, n_jobs=16)
         self.classifier.fit(hot_X, hot_y)
-
-
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
-
 
 class ScaledTrainer:
     def __init__(self, hot_X, hot_y):
@@ -60,7 +56,7 @@ class Inferencer(Query):
 
         m = self.enc_y.inverse_transform(y)
         sids = m.flatten().tolist()
-        sids = {x for x in sids if x != None}
+        sids = {x for x in sids if x is not None}
         self.show_answers(sids)
 
     def interact(self):

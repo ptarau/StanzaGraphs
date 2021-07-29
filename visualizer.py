@@ -6,10 +6,10 @@ MAX_EDGES = 2000
 def gshow(g, attr=None, file_name='pics/temp.gv', view=False):
     if g is None: return
 
-    ''' shows a networx DiGraph g
+    """ shows a networx DiGraph g
         using graphviz
         it could become slow on large graphs (above MAX_EDGES)
-    '''
+    """
     ecount = g.number_of_edges()
     if ecount > MAX_EDGES:
         print('GRAPH TOO BIG TO SHOW, EDGES=', ecount)
@@ -39,9 +39,9 @@ def gen_dot_edges(g, attr=None):
 
 
 def xshow(gs, attr=None, file_name='pics/temp.gv', view=False):
-    ''' shows a sequence of (possibly originating from the same,
+    """ shows a sequence of (possibly originating from the same,
        via a transformation) displayed together, left to right
-    '''
+    """
     dot = DotGraph()
     ecount = 0
     for i, g in enumerate(gs):
