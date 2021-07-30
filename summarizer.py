@@ -47,11 +47,13 @@ class Summarizer:
         self.fname = fname
         text = file2text(fname + ".txt")
         self.detect_language(text)
+        self.fact_list=None
         self.doc = self.nlp(text)
         # print('LANGUAGE:',self.lang)
 
     def from_text(self, text="Hello!"):
         self.detect_language(text)
+        self.fact_list = None
         self.doc = self.nlp(text)
 
     def is_keynoun(self, x):

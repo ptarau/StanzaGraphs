@@ -44,14 +44,15 @@ class Data:
             sid = int(sid)
             if len(lens) <= sid: lens.append(0)
             lens[sid] += 1
-            occs[(f, ff, r, tt, t)].add(sid)
+            # occs[(f, ff, r, tt, t)].add(sid)
+            occs[(f, t)].add(sid)
             sids.add(sid)
         self.occs = occs  # dict where edges occur
         self.lens = lens  # number of edges in each sentence
 
         X, Y = list(zip(*list(occs.items())))
         X = np.array(X)
-        y0 = np.array(sorted(map(lambda x: [x], sids)))
+        y0 = np.array(sorted([x] for x in sids))
 
         # make OneHot encoders for X and y
         enc_X = OneHotEncoder(handle_unknown='ignore')
@@ -91,6 +92,7 @@ class Query(Data):
         super().__init__(fname=fname)
         self.nlp_engine = Summarizer()
 
+
     def get_answers(self, text=None, k=3):
         """
         compute a similarity between
@@ -100,12 +102,14 @@ class Query(Data):
 
         text = translate(text, target_lang=self.lang)
 
+        #self.nlp_engine.fact_list = None
         self.nlp_engine.from_text(text)
 
         sids = []
 
         for f, ff, r, tt, t, _ in self.nlp_engine.facts():
-            sids.extend(self.occs.get((f, ff, r, tt, t), []))
+            # sids.extend(self.occs.get((f, ff, r, tt, t), []))
+            sids.extend(self.occs.get((f, t), []))
 
         c = Counter(sids)
         qlen = len(list(self.nlp_engine.facts()))
@@ -191,6 +195,7 @@ def sp_test():
     print("\n")
     print("ANSWER(S) TO QUESTION ABOUT SPANISH TEXT:\n")
     i.ask("Who will face a debate this Tuesday?")
+    i.ask("Who asked to wait for the winner of the lection?")
     print("\n")
 
 
