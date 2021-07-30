@@ -187,7 +187,7 @@ class Summarizer:
             print('CACHING TO: ', cname)
             to_json((sids, sents, kwds), cname)
 
-        self.to_tsv()
+        if PARAMS['CACHING'] : self.to_tsv()
         return kwds, sids, sents, picg
 
     def to_nx(self):  # converts to networkx graph
@@ -330,6 +330,6 @@ def test(fname='texts/english'):
 if __name__ == "__main__":
     test(fname='texts/english')
     # test(fname='texts/cosmo')
-    # test(fname='texts/spanish')
+    test(fname='texts/spanish')
     # test(fname='texts/chinese')
     # test(fname='texts/russian')
