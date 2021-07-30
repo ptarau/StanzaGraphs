@@ -23,8 +23,8 @@ def subg(g) :
 
 @ranker
 def closeness(g) :
-  return nx.closeness_centrality(g)
+  return nx.closeness_centrality(g,distance="weight")
 
 @ranker
 def betweenness(g) :
-  return nx.betweenness_centrality(g)
+  return nx.betweenness_centrality(g,weight="weight")

@@ -75,7 +75,7 @@ def summarize_one(pdf, trim, texts, sums, keys, lang):
         clean_text_file(tname, lang=lang)
         nlp = Summarizer(lang=lang)
         nlp.from_file(tname0)
-        kws, sents, _ = nlp.info()
+        kws, _, sents, _ = nlp.info()
 
         ktext = "\n".join(kws)
         ensure_path(kname)

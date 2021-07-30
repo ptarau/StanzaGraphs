@@ -26,6 +26,7 @@ class Summarizer:
         ensure_path(self.out)
         ensure_path("pics/")
         self.set_language(lang=lang)
+        self.fact_list = None
 
     def set_language(self, lang=None):
         self.lang = lang
@@ -70,6 +71,11 @@ class Summarizer:
         return f
 
     def facts(self):
+        if self.fact_list is None:
+            self.fact_list = list(self.generate_facts())
+        return self.fact_list
+
+    def generate_facts(self):
         """generates <from,from_tag,relation,to_tag,to,sentence_id> tuples"""
         first_occ = dict()
 
@@ -134,8 +140,8 @@ class Summarizer:
 
         if cname and exists_file(cname):
             print('FROM CACHED: ', cname)
-            sents, kwds = from_json(cname)
-            return kwds, sents, None
+            sids, sents, kwds = from_json(cname)
+            return kwds, sids, sents, None
 
         wk = PARAMS['k_count']
         sk = PARAMS['s_count']
@@ -172,25 +178,20 @@ class Summarizer:
         kwds = dict((k, 1) for k in kwds)  # remove duplicates, keep order
         kwds = [translate(w, source_lang=self.lang) for w in kwds]
 
-        sents = map(self.get_sent, sorted(sids))
+        sids = sorted(sids)
+
+        sents = map(self.get_sent, sids)
         sents = [translate(s, source_lang=self.lang) for s in sents]
 
         if cname:
             print('CACHING TO: ', cname)
-            to_json((sents, kwds), cname)
+            to_json((sids, sents, kwds), cname)
 
         self.to_tsv()
-        return kwds, sents, picg
+        return kwds, sids, sents, picg
 
     def to_nx(self):  # converts to networkx graph
         return facts2nx(self.facts())
-
-    '''
-    def show(self):
-      """ visualize  nodes and edges"""
-      g = self.to_nx()
-      gshow(g,file_name="pics/"+self.fname+".gv")
-   '''
 
     def to_tsv(self):  # writes out edges to .tsv file
         facts2tsv(self.facts(), self.out + self.fname + ".tsv")
@@ -211,9 +212,9 @@ class Summarizer:
         facts2tsv(sent_gen(), self.out + self.fname + "_sents.tsv")
 
     def summarize(self):  # extract summary and keywords
-        kws, sents, picg = self.info()
+        kws, sids, sents, picg = self.info()
         print("\nSUMMARY:")
-        for sent in sents: print(sent)
+        for sid, sent in zip(sids, sents): print(sent, '-> [', sid, ']')
         print("\nKEYWORDS:")
         for w in kws: print(w, end='; ')
         print("\n")
@@ -232,9 +233,14 @@ def facts2nx(fgen):
     edges also contain "root" links to
     sentence they originate from
     """
+    d = defaultdict(list)
     g = nx.DiGraph()
     for f, ff, rel, tt, t, sid in fgen:
-        g.add_edge(f, t)
+        d[(f, t)].append(sid)
+    for (f, t), sids in d.items():
+        w = 1 / len(sids)
+        # ppp('WEIGHT:',f, '->',t,sids)
+        g.add_edge(f, t, weight=w)
     return g
 
 
@@ -315,15 +321,15 @@ def process_file(fname=None):
 # TESTS
 
 def test(fname='texts/english'):
-    nlp = Summarizer()
-    nlp.from_file(fname)
+    #nlp = Summarizer()
+    #nlp.from_file(fname)
+    nlp=process_file(fname=fname)
     nlp.summarize()
-    nlp.to_prolog()
 
 
 if __name__ == "__main__":
     test(fname='texts/english')
     # test(fname='texts/cosmo')
-    test(fname='texts/spanish')
-    test(fname='texts/chinese')
-    test(fname='texts/russian')
+    # test(fname='texts/spanish')
+    # test(fname='texts/chinese')
+    # test(fname='texts/russian')

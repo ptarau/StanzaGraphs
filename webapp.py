@@ -71,7 +71,7 @@ def do_summary():
     nlp = Summarizer()
     nlp.from_file(fname)
 
-    kws, sents, picg = nlp.info()
+    kws, _, sents, picg = nlp.info()
     with right:
         st.write("\nSUMMARY:")
         for sent in sents: st.write(sent)

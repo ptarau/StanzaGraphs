@@ -8,7 +8,7 @@ import langid
 PARAMS = dict(
     TRACE=1,
     TARGET_LANG='en',  # tried zh,fr,sp,de,hu,ro,ar,el,la,it,ru,ja
-    RANKER='betweenness',
+    RANKER='closeness',
     UPLOAD_DIRECTORY='uploads/',
     OUTPUT_DIRECTORY='out/',
     k_count=7,
