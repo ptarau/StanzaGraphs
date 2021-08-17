@@ -112,7 +112,7 @@ class Query(Data):
             sids.extend(self.occs.get((f, t), []))
 
         c = Counter(sids)
-        qlen = len(list(self.nlp_engine.facts()))
+        qlen = len(self.nlp_engine.facts())
 
         for sid in c:
             shared = c[sid]
