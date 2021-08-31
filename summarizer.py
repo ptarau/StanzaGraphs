@@ -225,7 +225,8 @@ class Summarizer:
 
 # read a file into a string text
 def file2text(fname):
-    with open(fname, 'r') as f:
+    # with open(fname, 'r') as f:
+    with open(fname, 'r', encoding="utf-8") as f:  # for process Vietnamese
         return f.read()
 
 
@@ -298,7 +299,8 @@ def ranks2info(g, ranks, sents, keyns, wk, sk, lang):
 # writes out edge facts as .tsv file
 def facts2tsv(fgen, fname):
     ensure_path(fname)
-    with open(fname, 'w', newline='') as f:
+    # with open(fname, 'w', newline='') as f:
+    with open(fname, 'w', encoding="utf-8", newline='') as f:
         writer = csv.writer(f, delimiter='\t')
         for fact in fgen:
             writer.writerow(fact)
@@ -307,7 +309,8 @@ def facts2tsv(fgen, fname):
 # writes out edge facts as Prolog file
 def facts2prolog(fgen, fname):
     ensure_path(fname)
-    with open(fname, 'w') as f:
+    # with open(fname, 'w') as f:
+    with open(fname, 'w', encoding="utf-8") as f:  # for process Vietnamese
         for fact in fgen:
             print('edge', end='', file=f)
             print(fact, end=".\n", file=f)
@@ -330,8 +333,10 @@ def test(fname='texts/english'):
 
 
 if __name__ == "__main__":
-    test(fname='texts/english')
+    # test(fname='texts/english')
     # test(fname='texts/cosmo')
-    test(fname='texts/spanish')
+    # test(fname='texts/spanish')
     # test(fname='texts/chinese')
     # test(fname='texts/russian')
+    test(fname='texts/vietnamese')
+
