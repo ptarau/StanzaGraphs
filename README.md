@@ -1,6 +1,8 @@
 # StanzaGraphs is a Multilingual STANZA-based Summary and Keyword Extractor and Question-Answering System using TextGraphs and Neural Networks
 
 
+(Yifan's branch)
+
 The file ```summarizer.py``` generates dependency graphs of the form
 
 ```<from, edge_label, to, sentence_number_in_which_it_occurs>```
