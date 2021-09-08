@@ -43,16 +43,16 @@ class Summarizer:
             self.set_language(detected)
 
     # process text from a file
-    def from_file(self, fname=None):
+    def from_file(self, fname=None, detect=True):
         self.fname = fname
         text = file2text(fname + ".txt")
-        self.detect_language(text)
-        self.fact_list=None
+        if self.lang is None and detect: self.detect_language(text)
+        self.fact_list = None
         self.doc = self.nlp(text)
         # print('LANGUAGE:',self.lang)
 
-    def from_text(self, text="Hello!"):
-        self.detect_language(text)
+    def from_text(self, text="Hello!", detect=True):
+        if detect: self.detect_language(text)
         self.fact_list = None
         self.doc = self.nlp(text)
 
@@ -137,7 +137,9 @@ class Summarizer:
                 contexts[w.lemma].append((sid, context))
         return contexts
 
-    def info(self):
+    def info(self, wk=None, sk=None):
+        """extract keywords and summary sentences"""
+
         cname = self.cache_name()
 
         if cname and exists_file(cname):
@@ -145,10 +147,8 @@ class Summarizer:
             sids, sents, kwds = from_json(cname)
             return kwds, sids, sents, None
 
-        wk = PARAMS['k_count']
-        sk = PARAMS['s_count']
-
-        """extract keywords and summary sentences"""
+        if wk is None: wk = PARAMS['k_count']
+        if sk is None: sk = PARAMS['s_count']
 
         ranker = ranker_dict[PARAMS['RANKER']]
         g = self.to_nx()
@@ -189,7 +189,7 @@ class Summarizer:
             print('CACHING TO: ', cname)
             to_json((sids, sents, kwds), cname)
 
-        if PARAMS['CACHING'] : self.to_tsv()
+        if PARAMS['CACHING']: self.to_tsv()
         return kwds, sids, sents, picg
 
     def to_nx(self):  # converts to networkx graph
@@ -323,9 +323,9 @@ def process_file(fname=None):
 # TESTS
 
 def test(fname='texts/english'):
-    #nlp = Summarizer()
-    #nlp.from_file(fname)
-    nlp=process_file(fname=fname)
+    # nlp = Summarizer()
+    # nlp.from_file(fname)
+    nlp = process_file(fname=fname)
     nlp.summarize()
 
 

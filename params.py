@@ -1,5 +1,6 @@
 import json
 import os
+import pickle
 import subprocess
 from inspect import getframeinfo, stack
 
@@ -74,6 +75,36 @@ def home_dir():
 def ensure_path(fname):
     folder, _ = os.path.split(fname)
     os.makedirs(folder, exist_ok=True)
+
+
+def to_pickle(obj, fname='./arxiv.pickle'):
+    """
+    serializes an object to a .pickle file
+    """
+    ensure_path(fname)
+    with open(fname, "wb") as outf:
+        pickle.dump(obj, outf)
+
+
+def from_pickle(fname):
+    """
+    deserializes an object from a pickle file
+    """
+    with open(fname, "rb") as inf:
+        return pickle.load(inf)
+
+
+def take(n, gen):
+    for i, x in enumerate(gen):
+        if i >= n: break
+        yield x
+
+
+def pp(gen, n=10):
+    if isinstance(gen, dict):
+        gen = gen.items()
+    for x in take(n, gen):
+        print(x)
 
 
 def ppp(*args, **kwargs):
