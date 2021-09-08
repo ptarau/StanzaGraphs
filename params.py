@@ -94,6 +94,14 @@ def from_pickle(fname):
         return pickle.load(inf)
 
 
+def load_delimited(fname, delimiter):
+    with open(fname, mode="rt") as f:
+        for line in f:
+            xs = line.split(delimiter)
+            last = xs[-1]
+            xs[-1] = last[0:-1]
+            yield xs
+
 def take(n, gen):
     for i, x in enumerate(gen):
         if i >= n: break
