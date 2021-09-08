@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import defaultdict, Counter
 
 import nltk
 
@@ -12,10 +12,11 @@ class Stemmer:
         # symbol table
         self.w2i = dict()
         self.i2w = []
-        self.sym(' ')  # will use to pad vectors to equal length
+        self.ctr = Counter()
+        self.all_sids = []
         self.maxlen = 0
         self.minlen = 1 << 16
-        self.occs = defaultdict(set)
+        self.occs = defaultdict(list)
         self.too_short = 1
 
     def stem(self, w):
@@ -30,9 +31,14 @@ class Stemmer:
         return i
 
     def at(self, i):
-        if i >= 0 and i < len(self.i2w):
-            return self.i2w[i]
-        return None
+        # if i >= 0 and i < len(self.i2w):
+        return self.i2w[i]
+        # return None
+
+    def get_stops(self):
+        with open("stopwords.txt", 'rt') as f:
+            text = f.read()
+            return text.split('\n')
 
     def to_syms(self, text):
         syms = set()
@@ -44,15 +50,8 @@ class Stemmer:
                 if t[0] in "NVJ" and w not in self.stops:
                     w = self.stem(w)
                     if len(w) < 4: continue
-                    i = self.sym(w)
-                    # print(w, t, i)
-                    syms.add(i)
+                    syms.add(w)
         return syms
-
-    def get_stops(self):
-        with open("stopwords.txt", 'rt') as f:
-            text = f.read()
-            return text.split('\n')
 
     def syms_of(self, g):
         for n in g.nodes():
@@ -60,49 +59,57 @@ class Stemmer:
             abstr = g.nodes[n]['abstr']
             text = title + ". " + abstr
             syms = self.to_syms(text)
-            slen = len(syms)
-
-            self.maxlen = max(self.maxlen, slen)
-            self.minlen = min(self.minlen, slen)
-
-            # if slen < 20: print('!!!', text, list(map(self.at, syms)))
 
             for w in syms:
-                self.occs[w].add(n)
+                self.ctr[w] += 1
 
-            if n % 1000 == 0: print(n)
-            #if n > 200: break
+            yield n, syms  # node+syms in it
 
-            yield syms
+            if n % 100 == 0: print(n)
+            # if n > 5: break
+
+    def trim_syms(self, all_syms):
+        self.ctr = dict((x, k) for (x, k) in self.ctr.most_common() if k > self.too_short)
+        xss = []
+        for n, syms in all_syms:
+            xs = set(w for w in syms if w in self.ctr)
+            xss.append((n, sorted(xs)))
+        symlist = set(s for _, syms in xss for s in syms)
+
+        for n, syms in xss:
+            sids = set()
+            for w in syms:
+                if w in self.ctr:
+                    i = self.sym(w)
+                    self.occs[i].append(n)
+                    sids.add(i)
+            sids = sorted(sids)
+            self.maxlen = max(self.maxlen, len(sids))
+            self.minlen = min(self.minlen, len(sids))
+            self.all_sids.append(sids)
+        # pp(self.occs.items())
 
     def run(self, fname='experiments/arxiv.pickle'):
         ensure_path('experiments/out/no_such_file')
         g = from_pickle(fname)
         all_syms = list(self.syms_of(g))
-
-        shorts = set(i for i, ps in self.occs.items() if len(ps) <= self.too_short)
+        self.trim_syms(all_syms)
 
         with open('experiments/out/stems.tsv', 'wt') as wf:
-            for syms in all_syms:
-                shorties = syms & shorts
-                for i in shorties:
-                    syms.remove(i)
-                    self.occs.pop(i)
-
-                syms = sorted(syms)
-                stems = map(str, syms)
-                line = "\t".join(stems)
+            for sids in self.all_sids:
+                sids = sorted(sids)
+                sids = map(str, sids)
+                line = "\t".join(sids)
                 print(line, file=wf)
 
         with open('experiments/out/scounts.tsv', 'wt') as cf:
-            wks = []
-            counts = sorted(self.occs.items(), reverse=True, key=lambda x: len(x[1]))
-            for i, ks in counts:
-                wks.append((i, sorted(list(ks))))
+
+            for i, ks in self.occs.items():
+                # ks = sorted(ks)
                 items = [self.at(i), str(i), str(len(ks))]
                 print("\t".join(items), file=cf)
 
-            to_json(wks, 'experiments/out/swhere.json')
+            to_json(self.occs, 'experiments/out/swhere.json')
         print('MAX_MIN', self.maxlen, self.minlen)
 
 
