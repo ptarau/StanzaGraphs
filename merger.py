@@ -64,14 +64,22 @@ class TreeMerger:
         """generates <from,from_tag,relation,to_tag,to,sentence_id> tuples"""
 
         def fact(x, sent, sid):
+            xid = x.id
+            w = x.lemma
+            tag = x.upos
+            hw = sent.words[x.head - 1]
+            h = hw.lemma
             if x.head == 0:
-                return x.lemma, x.upos, 'PREDICATE_OF', 'SENT', sid, sid
+                return w, x.upos, 'PREDICATE_OF', 'SENT', sid, xid, sid
+            elif tag[0] not in "NVJ" and tag not in {'ADJ','ADV','PROPN'}  :
+                #print('TAG:',w,tag)
+                return None
+            #elif w in self.stops: return None
+            elif len(w) < 2 or w == h:
+                return None
             else:
-                hw = sent.words[x.head - 1]
-                h = hw.lemma
-                w = x.lemma
-                if w not in self.stops and len(w) > 1 and w != h:
-                    return w, x.upos, x.deprel, hw.upos, h, sid
+                #print('!!!', w, h)
+                return w, tag, x.deprel, hw.upos, h, xid, sid
 
         sent_id = 0
         for sentence in self.doc.sentences:
@@ -116,8 +124,10 @@ def facts2nx(fgen):
     sentence they originate from
     """
     g = nx.DiGraph()
-    for f, ff, rel, tt, t, sid in fgen:
+    for f, ff, rel, tt, t, xid, sid in fgen:
         if (t, f) in g.edges: continue
+        if rel=='PREDICATE_OF':
+            t='TEXT_ROOT'
         g.add_edge(f, t, rel=ff + "_" + rel + "_" + tt)
     return g
 
@@ -144,6 +154,7 @@ def process_file(fname=None):
     nlp = TreeMerger()
     nlp.from_file(fname)
     nlp.to_tsv()
+    nlp.to_prolog()
     return nlp
 
 
@@ -160,7 +171,8 @@ def small():
     tm.from_text(text)
     g = tm.to_nx()
     print(g.number_of_nodes())
-    gshow(g)
+    tm.to_prolog()
+    gshow(g)#.reverse(copy=False))
 
 
 if __name__ == "__main__":
