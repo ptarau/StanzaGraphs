@@ -1,10 +1,10 @@
-import os
 import csv
+import os
 
 import networkx as nx
 import stanza
 
-#from params import *
+# from params import *
 from visualizer import *
 
 
@@ -19,7 +19,7 @@ class TreeMerger:
     """
 
     def __init__(self, lang='en'):
-        self.out = 'out/' # PARAMS['OUTPUT_DIRECTORY']
+        self.out = 'out/'  # PARAMS['OUTPUT_DIRECTORY']
         ensure_path(self.out)
         ensure_path("pics/")
         self.fact_list = None
@@ -39,7 +39,7 @@ class TreeMerger:
         self.doc = self.nlp(text)
 
     def from_text(self, text="Hello!"):
-        self.fname='from_text'
+        self.fname = 'from_text'
         self.fact_list = None
         self.doc = self.nlp(text)
 
@@ -128,20 +128,20 @@ def facts2nx(fgen):
     g = nx.DiGraph()
     for f, ff, rel, tt, t, xid, sid in fgen:
         if (t, f) in g.edges: continue
-        if rel == 'PREDICATE_OF':
-            t = 'TEXT_ROOT'
+        if rel == 'PREDICATE_OF': t = 'TEXT_ROOT'
         g.add_edge(f, t, rel=ff + "_" + rel + "_" + tt)
     return g
 
 
 def midrank(g):
-    d=nx.pagerank(g)
-    rg=g.reverse(copy=False)
-    rd=nx.pagerank(rg)
-    m=dict()
-    for (w,r) in d.items():
-        m[w]=(r+rd[w])/2
+    d = nx.pagerank(g)
+    rg = g.reverse(copy=False)
+    rd = nx.pagerank(rg)
+    m = dict()
+    for (w, r) in d.items():
+        m[w] = (r + rd[w]) / 2
     return m
+
 
 # writes out edge facts as .tsv file
 def facts2tsv(fgen, fname):
@@ -173,6 +173,7 @@ def ensure_path(fname):
     folder, _ = os.path.split(fname)
     os.makedirs(folder, exist_ok=True)
 
+
 def exists_file(fname):
     """ if it exists as file or dir"""
     return os.path.exists(fname)
@@ -194,10 +195,12 @@ def large():
     tm.to_prolog()
     gshow(g)  # .reverse(copy=False))
 
+
 def medium():
     tm = TreeMerger()
     tm.from_file('texts/english')
     g = tm.to_nx()
+    g = nx.transitive_reduction(g)
     print(g.number_of_nodes())
     tm.to_prolog()
     gshow(g.reverse(copy=False))
@@ -218,12 +221,11 @@ def small():
     g = tm.to_nx()
     print(g.number_of_nodes())
     tm.to_prolog()
-    g=g.reverse(copy=False)
+    #g = g.reverse(copy=False)
     gshow(g)
-    d=nx.pagerank(g)
 
-    m=midrank(g)
-    m = sorted(m.items(), reverse=True, key=lambda x: x[1])
+    d = nx.pagerank(g)
+    m = sorted(d.items(), reverse=True, key=lambda x: x[1])
     for w in m:
         print(w)
 
