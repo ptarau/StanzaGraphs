@@ -126,9 +126,7 @@ class TextWorker:
         gshow(g, file_name=self.pics + self.fname + "_" + tag + ".gv")
 
     def as_term(self):
-        g = self.to_nx_graph()
-        if not nx.is_directed_acyclic_graph(g):
-            g = nx.dfs_tree(g, source='TEXT_ROOT')
+        g = self.to_nx_tree()
 
         def as_atomic(n):
             n = str(n)
