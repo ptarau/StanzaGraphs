@@ -3,7 +3,7 @@ from graphviz import Digraph as DotGraph
 MAX_EDGES = 2000
 
 
-def gshow(g, attr=None, file_name='pics/temp.gv', view=False):
+def gshow(g, attr=None, file_name=None, view=False):
     if g is None: return
 
     """ shows a networx DiGraph g
@@ -38,7 +38,7 @@ def gen_dot_edges(g, attr=None):
         yield (f, t, w)
 
 
-def xshow(gs, attr=None, file_name='pics/temp.gv', view=False):
+def xshow(gs, attr=None, file_name=None, view=False):
     """ shows a sequence of (possibly originating from the same,
        via a transformation) displayed together, left to right
     """

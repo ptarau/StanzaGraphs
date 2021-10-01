@@ -8,7 +8,7 @@ import stanza
 from params import *
 from rankers import ranker_dict
 from translator import translate
-from visualizer import gshow
+from logic.visualizer import gshow
 
 
 class Summarizer:

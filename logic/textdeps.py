@@ -1,27 +1,25 @@
 import csv
-import os
 
 import networkx as nx
 import stanza
 
-# from params import *
+from params import *
 from visualizer import *
 
 
-class TreeMerger:
+class TextWorker:
     """
-    Stanza-based multi-lingual NLP processor
-    that extracts summaries and keywords
-    and builds text graph edge files derived
-    from dependency links usable donwstream
-    for algorithmic and deep-learning based
-    information retrieval tasks
+    Stanza-based NLP processor and builds text graph  derived
+    from dependency links usable donwstream for algorithmic and
+    deep-learning based information retrieval tasks.
+    It also export its data as Prolog term and relation files.
     """
 
     def __init__(self, lang='en'):
-        self.out = 'out/'  # PARAMS['OUTPUT_DIRECTORY']
+        self.out = PARAMS['OUTPUT_DIRECTORY']
+        self.pics = PARAMS['PICS']
         ensure_path(self.out)
-        ensure_path("pics/")
+        ensure_path(self.pics)
         self.fact_list = None
         self.lang = lang
 
@@ -29,7 +27,6 @@ class TreeMerger:
             stanza.download(lang)
 
         self.nlp = stanza.Pipeline(lang=lang, logging_level='ERROR')
-        self.stops = set(self.get_stops())
 
     # process text from a file
     def from_file(self, fname=None):
@@ -38,24 +35,14 @@ class TreeMerger:
         self.fact_list = None
         self.doc = self.nlp(text)
 
+    # process text from a string
     def from_text(self, text="Hello!"):
         self.fname = 'from_text'
         self.fact_list = None
         self.doc = self.nlp(text)
 
-    def is_keynoun(self, x):
-        """true for "important" nouns"""
-        ok = x.upos in ('NOUN', 'PROPN') and ('subj' in x.deprel or 'ob' in x.deprel)
-        if self.lang == 'en': ok = ok and len(x.lemma) > 3
-        return ok
-
     def get_text(self):
         return self.doc.text
-
-    def get_stops(self):
-        with open("stopwords.txt", 'rt') as f:
-            text = f.read()
-            return text.split('\n')
 
     def facts(self):
         if self.fact_list is None:
@@ -65,7 +52,18 @@ class TreeMerger:
     def generate_facts(self):
         """generates <from,from_tag,relation,to_tag,to,sentence_id> tuples"""
 
+        def is_ascii(s):
+            return all(ord(c) < 128 for c in s)
+
+        def good_word(x):
+            w = x.lemma
+            tag = x.upos
+            ok = tag[0] in "NVJ" or tag in {'ADJ', 'ADV', 'PROPN'}
+            ok = ok and len(w) > 2 and w.isalnum() and is_ascii(w)
+            return ok
+
         def fact(x, sent, sid):
+            if not good_word(x): return None
             xid = x.id
             w = x.lemma
             tag = x.upos
@@ -73,12 +71,6 @@ class TreeMerger:
             h = hw.lemma
             if x.head == 0:
                 return w, x.upos, 'PREDICATE_OF', 'SENT', sid, xid, sid
-            elif tag[0] not in "NVJ" and tag not in {'ADJ', 'ADV', 'PROPN'}:
-                # print('TAG:',w,tag)
-                return None
-            # elif w in self.stops: return None
-            elif len(w) < 2 or w == h:
-                return None
             else:
                 # print('!!!', w, h)
                 return w, tag, x.deprel, hw.upos, h, xid, sid
@@ -91,8 +83,17 @@ class TreeMerger:
                 res = fact(word, sentence, sent_id)
                 if res: yield res
 
-    def to_nx(self):  # converts to networkx graph
-        return facts2nx(self.facts())
+    def to_nx_tree(self):
+        """ converts to networkx graph """
+        g = self.to_nx_graph()
+        if not nx.is_directed_acyclic_graph(g):
+            g = nx.dfs_tree(g, source='TEXT_ROOT')
+        return g
+
+    def to_nx_graph(self):  # converts to networkx graph
+        g = facts2nx(self.facts())
+        g = g.reverse()
+        return g
 
     def to_tsv(self):  # writes out edges to .tsv file
         facts2tsv(self.facts(), self.out + self.fname + ".tsv")
@@ -112,6 +113,38 @@ class TreeMerger:
 
         facts2tsv(sent_gen(), self.out + self.fname + "_sents.tsv")
 
+    def gshow(self, as_tree=True):
+        if as_tree:
+            tag = "tree"
+            g = self.to_nx_tree()
+        else:
+            tag = "dag"
+            g = self.to_nx_graph()
+        print('NODES:', g.number_of_nodes(), 'EDGES:', g.number_of_edges())
+        gshow(g, file_name=self.pics + self.fname + "_" + tag + ".gv")
+
+    def as_term(self):
+        g = self.to_nx_graph()
+        if not nx.is_directed_acyclic_graph(g):
+            g = nx.dfs_tree(g, source='TEXT_ROOT')
+
+        def as_atomic(n):
+            n = str(n)
+            if n == 'TEXT_ROOT': n = 'text_term'
+            if n and (n[0].isupper() or n[0] == '_' or n[0].isdigit()):
+                n = "'" + n + "'"
+            return n
+
+        def from_root(n):
+            h = as_atomic(n)
+            if g.out_degree(n) == 0: return h
+            ms = nx.neighbors(g, n)
+            xs = [from_root(m) for m in ms]
+            s = ",".join(xs)
+            return "".join([h, "(", s, ")"])
+
+        return from_root("TEXT_ROOT")
+
 
 # read a file into a string text
 def file2text(fname):
@@ -126,21 +159,15 @@ def facts2nx(fgen):
     sentence they originate from
     """
     g = nx.DiGraph()
+
     for f, ff, rel, tt, t, xid, sid in fgen:
-        if (t, f) in g.edges: continue
+        if f == t or (t, f) in g.edges: continue
         if rel == 'PREDICATE_OF': t = 'TEXT_ROOT'
         g.add_edge(f, t, rel=ff + "_" + rel + "_" + tt)
+
+    # if not nx.is_directed_acyclic_graph(g):
+    #    gshow(g,file_name="EXPECTED_DAG")
     return g
-
-
-def midrank(g):
-    d = nx.pagerank(g)
-    rg = g.reverse(copy=False)
-    rd = nx.pagerank(rg)
-    m = dict()
-    for (w, r) in d.items():
-        m[w] = (r + rd[w]) / 2
-    return m
 
 
 # writes out edge facts as .tsv file
@@ -162,21 +189,11 @@ def facts2prolog(fgen, fname):
 
 
 def process_file(fname=None):
-    nlp = TreeMerger()
+    nlp = TextWorker()
     nlp.from_file(fname)
     nlp.to_tsv()
     nlp.to_prolog()
     return nlp
-
-
-def ensure_path(fname):
-    folder, _ = os.path.split(fname)
-    os.makedirs(folder, exist_ok=True)
-
-
-def exists_file(fname):
-    """ if it exists as file or dir"""
-    return os.path.exists(fname)
 
 
 def home_dir():
@@ -187,49 +204,30 @@ def home_dir():
 # TESTS
 
 
-def large():
-    tm = TreeMerger()
-    tm.from_file('texts/cosmo')
-    g = tm.to_nx()
-    print(g.number_of_nodes())
-    tm.to_prolog()
-    gshow(g)  # .reverse(copy=False))
-
-
-def medium():
-    tm = TreeMerger()
-    tm.from_file('texts/english')
-    g = tm.to_nx()
-    g = nx.transitive_reduction(g)
-    print(g.number_of_nodes())
-    tm.to_prolog()
-    gshow(g.reverse(copy=False))
-    m = midrank(g)
-    m = sorted(m.items(), reverse=True, key=lambda x: x[1])
-    for w in m:
-        print(w)
-
-
-def small():
+def test_merger():
     text = """
-    Penrose found that the dimensions of space and time switch roles inside a trapped surface. Time is the direction pointing toward the center, so that escaping a black hole is as impossible as going back in time. Penrose, together with Stephen Hawking, soon showed that a similar analysis applies to the entire universe: A singularity would have inevitably existed when matter and energy were densely packed together in the Big Bang.
-    Penrose showed that, as he put it in his 1965 paper,  deviations from spherical symmetry cannot prevent space-time singularities from arising.  In other words, even when a star is distorted, it will still collapse down to a point. He showed this by introducing the notion of a trapped surface, as well as a now-famous diagrammatic scheme for analyzing how the surface sits inside space-time. Unlike a regular surface, which can have light rays shooting away from it in any direction, a trapped surface is a closed two-dimensional surface that — even when distorted so it’s no longer a sphere — only allows light rays to go one way: toward the center point.
-     """
-
-    tm = TreeMerger()
+Logic Programming and Functional Programming are declarative programming paradigms. 
+Evaluation in Logic Programs is eager while for functional programs it may be lazy. 
+As a common feature, unification is used for evaluation in Logic Programming and 
+for type inference in Functional Programming.
+"""
+    tm = TextWorker()
+    text = text.lower()
     tm.from_text(text)
-    g = tm.to_nx()
-    print(g.number_of_nodes())
+    g = tm.to_nx_tree()
     tm.to_prolog()
-    #g = g.reverse(copy=False)
-    gshow(g)
+    # g = g.reverse(copy=False)
+    tm.gshow(as_tree=True)
+    #tm.gshow(as_tree=False)
 
     d = nx.pagerank(g)
     m = sorted(d.items(), reverse=True, key=lambda x: x[1])
     for w in m:
         print(w)
 
+    print(tm.as_term())
+
 
 if __name__ == "__main__":
-    #medium()
-    small()
+    pass
+    test_merger()
