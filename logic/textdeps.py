@@ -83,16 +83,18 @@ class TextWorker:
                 res = fact(word, sentence, sent_id)
                 if res: yield res
 
-    def to_nx_tree(self):
-        """ converts to networkx graph """
-        g = self.to_nx_graph()
-        if not nx.is_directed_acyclic_graph(g):
-            g = nx.dfs_tree(g, source='TEXT_ROOT')
-        return g
-
     def to_nx_graph(self):  # converts to networkx graph
         g = facts2nx(self.facts())
         g = g.reverse()
+        return g
+
+    def to_nx_tree(self):
+        """ converts to networkx graph """
+        g = self.to_nx_graph()
+        s = 'TEXT_ROOT'
+        if s not in g.nodes: g.add_node(s)
+        if not nx.is_directed_acyclic_graph(g):
+            g = nx.dfs_tree(g, source=s)
         return g
 
     def to_tsv(self):  # writes out edges to .tsv file
