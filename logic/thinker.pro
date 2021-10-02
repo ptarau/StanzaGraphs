@@ -13,9 +13,10 @@ accuracy(MaxNodes,Acc):-
    Acc is Success/Total.
 
 inferred_label(MaxNodes,YtoGuess, YasGuessed):-
-  writeln('STRATING'),
+   writeln('STARTING'),M=100,
    most_freq_class(FreqClass),
    at(N,te,YtoGuess,MyTextTerm,Neighbors),
+   (N mod M=:=0->writeln(starting(N));true),
    ( at_most_n_sols(MaxNodes,YW,
      neighbor_data(MyTextTerm,Neighbors,YW),YWs)->true
    ; at_most_n_sols(MaxNodes,YW,peer_data(MyTextTerm,YW),YWs)->true
@@ -27,7 +28,7 @@ inferred_label(MaxNodes,YtoGuess, YasGuessed):-
    aggregate_all(max(Count,Y),
        member(Count-Y,WYs),
        max(Count,YasGuessed)),
-   (N mod 1 =:=0->writeln(at(N,YtoGuess, YasGuessed));true).
+   (N mod M=:=0->writeln(done(N,(YasGuessed->YtoGuess))),nl;true).
 
 neighbor_data(MyTextTerm,Neighbors,Y-Weight):-
   member(M,Neighbors),
@@ -48,19 +49,22 @@ keygroups(Ps,KXs):-
    group_pairs_by_key(Ss,KXs).
 
 
-min_sim(2).
-
 fast_path_similarity(A,B,Sim):-
   %term_size(A,S1),term_size(B,S2),writeln(sizes(S1,S2)),
   aggregate_all(max(X),co_path_length(A,B,X),Sim0),
   %writeln(sim=Sim0),
-  Sim is 1+Sim0.
+  Sim is 2+Sim0.
 
+to_forest(_,A,B,S,T):-atomic(A),!,S=A,T=B.
+to_forest(_,A,B,S,T):-atomic(B),!,S=A,T=B.
+to_forest(D,A,B,S,T):-D>0,DD is D-1,arg(_,A,AA),arg(_,B,BB),
+   to_forest(DD,AA,BB,S,T).
 
 co_path_length(S,T,Len):-
+   %to_forest(1,A,B,S,T),
    co_path(S,T,Ps),
-   %writeln('>>>'+Ps),
    length(Ps,Len).
+   %Len>2,!,writeln(path=Ps).
 
 co_path(S,T,Ps):-co_path(3,S,T,Ps).
 
