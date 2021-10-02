@@ -1,19 +1,21 @@
+:-set_prolog_flag(stack_limit,17179869184).
+
 c:-make.
 
 :-ensure_loaded('OUTPUT_DIRECTORY/arxiv_all.pro').
+:-ensure_loaded('sims.pro').
 
-accuracy(Acc):-accuracy(64,Acc).
+accuracy(Acc):-time(accuracy(64,Acc)).
 
 accuracy(MaxNodes,Acc):-
-   findall(YtoGuess-YasGuessed,
-      inferred_label(MaxNodes,YtoGuess,YasGuessed),Pairs),
-   length(Pairs,Total),
-   findall(1,member(A-A,Pairs),SameYs),
-   length(SameYs,Success),
+   count_nodes('te',Total), % test nodes
+   aggregate_all(count,correct_label(MaxNodes),Success),
    Acc is Success/Total.
 
+correct_label(MaxNodes):-inferred_label(MaxNodes,Y,Y).
+
 inferred_label(MaxNodes,YtoGuess, YasGuessed):-
-   writeln('STARTING'),M=100,
+   writeln('STARTING'),M=1000,
    most_freq_class(FreqClass),
    at(N,te,YtoGuess,MyTextTerm,Neighbors),
    (N mod M=:=0->writeln(starting(N));true),
@@ -32,55 +34,20 @@ inferred_label(MaxNodes,YtoGuess, YasGuessed):-
 
 neighbor_data(MyTextTerm,Neighbors,Y-Weight):-
   member(M,Neighbors),
-  similar_to(MyTextTerm,M,Y,Weight),
-  Weight>2.
+  similar_to(MyTextTerm,M,Y,Weight).
 
 peer_data(MyTextTerm,Y-Weight):-
-  similar_to(MyTextTerm,_Any,Y,Weight),
-  Weight>3.
+  similar_to(MyTextTerm,_Any,Y,Weight).
 
 similar_to(MyTextTerm, M, Y,Weight):-
    at(M,Split,Y,ItsTextTerm,_),
    memberchk(Split,[tr,va]),
-   similarity(MyTextTerm,ItsTextTerm,Weight).
+   similarity(MyTextTerm,ItsTextTerm,Weight),
+   Weight>0.
 
 keygroups(Ps,KXs):-
    keysort(Ps,Ss),
    group_pairs_by_key(Ss,KXs).
-
-
-fast_path_similarity(A,B,Sim):-
-  %term_size(A,S1),term_size(B,S2),writeln(sizes(S1,S2)),
-  aggregate_all(max(X),co_path_length(A,B,X),Sim0),
-  %writeln(sim=Sim0),
-  Sim is 2+Sim0.
-
-to_forest(_,A,B,S,T):-atomic(A),!,S=A,T=B.
-to_forest(_,A,B,S,T):-atomic(B),!,S=A,T=B.
-to_forest(D,A,B,S,T):-D>0,DD is D-1,arg(_,A,AA),arg(_,B,BB),
-   to_forest(DD,AA,BB,S,T).
-
-co_path_length(S,T,Len):-
-   %to_forest(1,A,B,S,T),
-   co_path(S,T,Ps),
-   length(Ps,Len).
-   %Len>2,!,writeln(path=Ps).
-
-co_path(S,T,Ps):-co_path(3,S,T,Ps).
-
-co_path(Skip,S,T,Ps):-distinct(Ps,co_path(Skip,S,T,Ps,[])).
-
-co_path(_,S,_)-->{atomic(S)},!.
-co_path(_,_,T)-->{atomic(T)},!.
-co_path(Skip,S,T)-->
-  {functor(S,F,_),functor(T,G,_)},
-  maybe_skip(F,G,Skip,SkipLater),
-  {arg(_,S,X),arg(_,T,Y)},
-  co_path(SkipLater,X,Y).
-
-maybe_skip(F,F,Skip,Skip)-->!,[F].
-maybe_skip(_F,_G,Skip,NewSkip)-->{Skip>0,NewSkip is Skip-1}.
-
 
 
 sum_up(Y-Ws,W-Y):-sumlist(Ws,W).
@@ -88,10 +55,8 @@ sum_up(Y-Ws,W-Y):-sumlist(Ws,W).
 at_most_n_sols(N,X,G,Xs):-once(findnsols(N,X,G,Xs)),Xs=[_|_].
 
 
-% similarity(A,B,S):-mock_similarity(A,B,S).
-similarity(A,B,S):-fast_path_similarity(A,B,S).
-% similarity(A,B,S):-subtree_similarity(A,B,S).
-
+count_nodes(Kind,Count):-
+   aggregate_all(count,at(_N,Kind,_Y,_Term,_Ns),Count).
 
 most_freq_class(FreqClass):-
    findall(Y-1,at(_N,_Kind,Y,_Term,_Ns),YNs),
@@ -104,25 +69,13 @@ most_freq_class(FreqClass):-
    ).
 
 
+similarity(A,B,S):-mock_similarity(A,B,S). % 120-> 0.66734
+% similarity(A,B,S):-fast_path_similarity(A,B,S).
+% similarity(A,B,S):-slow_path_similarity(A,B,S).
+% similarity(A,B,S):-subtree_similarity(A,B,S).
+% similarity(A,B,S):-node_jaccard_similarity(A,B,S).
+% similarity(A,B,S):-edge_jaccard_similarity(A,B,S).
+
+
 go:-accuracy(Acc),writeln(accuracy=Acc).
 
-
-stest:-
-   A=f(a,g(b,p(h(c))),i(d)),
-   B=f(e,g(q(h(e)),b),d),
-   similarity(A,B,Sim),
-   writeln(Sim),
-   fail.
-
-stest1:-
-   A=f(a,g(b,p(h(c))),i(d)),
-   B=f(e,g(q(h(e)),b),d),
-   co_path(A,B,Ps),
-   writeln(Ps),
-   fail.
-
-/*
-138139 nodes
-38746.005 seconds cpu time for 710,463,593,629 inferences
-accuracy=0.6744233895027056
-*/
