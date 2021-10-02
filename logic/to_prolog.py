@@ -74,5 +74,5 @@ class Converter:
 
 
 if __name__ == "__main__":
-    C = Converter(mock=20)
+    C = Converter(mock=5)
     C.run()
