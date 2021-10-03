@@ -1,35 +1,53 @@
-:-set_prolog_flag(stack_limit,17179869184).
+:-set_prolog_flag(stack_limit,34359738368).
 
 c:-make.
 
 :-ensure_loaded('OUTPUT_DIRECTORY/arxiv_all.pro').
 :-ensure_loaded('sims.pro').
 
-accuracy(Acc):-time(accuracy(64,Acc)).
+param(show_each_nth,100).
+param(max_nodes,64).
+param(depth_for_edges,4).
+param(path_similarity_start,2).
+param(favor_the_neighbors,false).
 
-accuracy(MaxNodes,Acc):-
+param(similarity,node_jaccard_similarity).
+
+similarity(A,B,Sim):-param(similarity,F),call(F,A,B,Sim).
+
+% mock_similarity(A,B,S) % 64 -> 0.0.6732
+% fast_path_similarity(A,B,S). % 64 -> 0.6824
+% slow_path_similarity(A,B,S)
+% subtree_similarity(A,B,S). % 64-> accuracy=0.6412
+% node_jaccard_similarity(A,B,S). % 64->0.6814
+% edge_jaccard_similarity(A,B,S). % 64->0.6256 depth 3
+
+accuracy(Acc):-
    count_nodes('te',Total), % test nodes
-   aggregate_all(count,correct_label(MaxNodes),Success),
+   aggregate_all(count,correct_label,Success),
    Acc is Success/Total.
 
-correct_label(MaxNodes):-inferred_label(MaxNodes,Y,Y).
+correct_label:-inferred_label(YtoGuess, YasGuessed),YtoGuess=YasGuessed.
 
-inferred_label(MaxNodes,YtoGuess, YasGuessed):-
-   writeln('STARTING'),M=1000,
+inferred_label(YtoGuess, YasGuessed):-
+   writeln('STARTING'),
+   param(show_each_nth,M),
+   param(max_nodes,MaxNodes),
    most_freq_class(FreqClass),
    at(N,te,YtoGuess,MyTextTerm,Neighbors),
    (N mod M=:=0->writeln(starting(N));true),
-   ( at_most_n_sols(MaxNodes,YW,
-     neighbor_data(MyTextTerm,Neighbors,YW),YWs)->true
-   ; at_most_n_sols(MaxNodes,YW,peer_data(MyTextTerm,YW),YWs)->true
-   ; YWs=[FreqClass-1.0]
-     ,writeln('*** no peer found, assigned'(N=FreqClass))
+   ( param(favor_the_neighbors,true),
+     at_most_n_sols(MaxNodes,YW,
+          neighbor_data(MyTextTerm,Neighbors,YW),YWs)->true
+   ; at_most_n_sols(MaxNodes,YW,
+          peer_data(MyTextTerm,YW),YWs)->true
+   ;
+     writeln('*** no peer found, assigned'(N=FreqClass)),
+     YWs=[FreqClass-1.0]
    ),
    keygroups(YWs,YWss),
    maplist(sum_up,YWss,WYs),
-   aggregate_all(max(Count,Y),
-       member(Count-Y,WYs),
-       max(Count,YasGuessed)),
+   (max_member(_-YasGuessed,WYs)->true;writeln(unexpected_fail=N)),
    (N mod M=:=0->writeln(done(N,(YasGuessed->YtoGuess))),nl;true).
 
 neighbor_data(MyTextTerm,Neighbors,Y-Weight):-
@@ -69,13 +87,10 @@ most_freq_class(FreqClass):-
    ).
 
 
-similarity(A,B,S):-mock_similarity(A,B,S). % 120-> 0.66734
-% similarity(A,B,S):-fast_path_similarity(A,B,S).
-% similarity(A,B,S):-slow_path_similarity(A,B,S).
-% similarity(A,B,S):-subtree_similarity(A,B,S).
-% similarity(A,B,S):-node_jaccard_similarity(A,B,S).
-% similarity(A,B,S):-edge_jaccard_similarity(A,B,S).
 
-
-go:-accuracy(Acc),writeln(accuracy=Acc).
+go:-
+   listing(param),
+   time(accuracy(Acc)),
+   listing(param),
+   writeln(accuracy=Acc).
 

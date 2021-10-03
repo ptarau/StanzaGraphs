@@ -1,6 +1,6 @@
-mock_similarity(_A,_B,4).
+mock_similarity(_A,_B,1).
 
-% based on shared subtrees
+% similarity based on shared subtrees
 subtree_similarity(A,B,Sim):-
    aggregate_all(sum(Sim),sharing_count(A,B,Sim),Sim).
 
@@ -30,12 +30,13 @@ shared_path_length(A,B,Sim):-
    intersection(Ps,Qs,Is),
    length(Is,Sim).
 
-% based on co-paths in the two terms
+% similarity based on co-paths in the two terms
+
 fast_path_similarity(A,B,Sim):-
   %term_size(A,S1),term_size(B,S2),writeln(sizes(S1,S2)),
   aggregate_all(max(X),co_path_length(A,B,X),Sim0),
   %writeln(sim=Sim0),
-  Sim is 2+Sim0.
+  Sim is 1+Sim0.
 
 to_forest(0,A,B,S,T):-!,S=A,T=B.
 to_forest(_,A,B,S,T):-atomic(A),!,S=A,T=B.
@@ -45,7 +46,8 @@ to_forest(D,A,B,S,T):-D>0,DD is D-1,
    to_forest(DD,AA,BB,S,T).
 
 co_path_length(A,B,Len):-
-   to_forest(2,A,B,S,T),
+   param(path_similarity_start,Depth),
+   to_forest(Depth,A,B,S,T),
    co_path(S,T,Ps),
    length(Ps,Len).
 
@@ -64,7 +66,7 @@ co_path(Skip,S,T)-->
 maybe_skip(F,F,Skip,Skip)-->!,[F].
 maybe_skip(_F,_G,Skip,NewSkip)-->{Skip>0,NewSkip is Skip-1}.
 
-% jaccard_nodes_similarity
+% jaccard similarity between nodes
 
 nodes_of(S,Xs):-aggregate_all(set(X),node_of(S,X),Xs).
 
@@ -81,6 +83,26 @@ node_jaccard_similarity(A,B,Sim):-
    nodes_of(B,Ys),
    jaccard(Xs,Ys,Sim).
 
+% jaccard similarity between edges
+
+edge_of(_Depth,T,R):-atomic(T),!,R=(T-T).
+edge_of(Depth,T,R):-Depth>0,Deeper is Depth-1,
+   functor(T,X,_),
+   arg(_,T,A),
+   edge_of(Deeper,A,Y-Z),
+   (R=X-Y,X\=Y;R=Y-Z,Y\=Z).
+
+edges_of(S,Xs):-
+   param(depth_for_edges,Depth),
+   aggregate_all(set(X),distinct(X,edge_of(Depth,S,X)),Xs).
+
+edge_jaccard_similarity(A,B,Sim):-
+   edges_of(A,Xs),
+   edges_of(B,Ys),
+   jaccard(Xs,Ys,Sim).
+
+% jaccard similarity
+
 jaccard(Xs,Ys,Sim):-
    ord_intersection(Xs,Ys,Zs),
    ( Zs=[]->Sim=0.0
@@ -90,19 +112,7 @@ jaccard(Xs,Ys,Sim):-
      Sim is Shared/(L+R-Shared)
    ).
 
-edge_of(T,R):-atomic(T),!,R=(T-T).
-edge_of(T,R):-
-   functor(T,X,_),
-   arg(_,T,A),
-   edge_of(A,Y-Z),
-   (R=X-Y,X\=Y;R=Y-Z,Y\=Z).
-
-edges_of(S,Xs):-aggregate_all(set(X),edge_of(S,X),Xs).
-
-edge_jaccard_similarity(A,B,Sim):-
-   edges_of(A,Xs),
-   edges_of(B,Ys),
-   jaccard(Xs,Ys,Sim).
+% test similarities
 
 simtest:-
    A=f(a,g(b,p(h(c))),i(c)),
