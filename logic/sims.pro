@@ -34,9 +34,7 @@ shared_path_length(A,B,Sim):-
 
 fast_path_similarity(A,B,Sim):-
   %term_size(A,S1),term_size(B,S2),writeln(sizes(S1,S2)),
-  aggregate_all(max(X),co_path_length(A,B,X),Sim0),
-  %writeln(sim=Sim0),
-  Sim is 1+Sim0.
+  aggregate_all(max(X),co_path_length(A,B,X),Sim).
 
 to_forest(0,A,B,S,T):-!,S=A,T=B.
 to_forest(_,A,B,S,T):-atomic(A),!,S=A,T=B.

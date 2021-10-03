@@ -1,9 +1,10 @@
-:-set_prolog_flag(stack_limit,34359738368).
+%:-set_prolog_flag(stack_limit,34359738368).
 
 c:-make.
 
 :-ensure_loaded('OUTPUT_DIRECTORY/arxiv_all.pro').
 :-ensure_loaded('sims.pro').
+:-ensure_loaded('explainer.pro').
 
 param(show_each_nth,100).
 param(max_nodes,64).
@@ -11,7 +12,7 @@ param(depth_for_edges,4).
 param(path_similarity_start,2).
 param(favor_the_neighbors,false).
 
-param(similarity,node_jaccard_similarity).
+param(similarity,fast_path_similarity).
 
 similarity(A,B,Sim):-param(similarity,F),call(F,A,B,Sim).
 
@@ -94,3 +95,56 @@ go:-
    listing(param),
    writeln(accuracy=Acc).
 
+/*
+param(show_each_nth, 100).
+param(max_nodes, 64).
+param(depth_for_edges, 4).
+param(path_similarity_start, 2).
+param(similarity, fast_path_similarity).
+param(favor_the_neighbors,true).
+
+accuracy=0.6746085632574121
+
+
+param(show_each_nth, 100).
+param(max_nodes, 64).
+param(depth_for_edges, 4).
+param(path_similarity_start, 2).
+param(favor_the_neighbors, false).
+param(similarity, node_jaccard_similarity).
+
+accuracy=0.05865893051869226
+
+
+param(show_each_nth, 100).
+param(max_nodes, 64).
+param(depth_for_edges, 4).
+param(path_similarity_start, 2).
+param(favor_the_neighbors, false).
+param(similarity, mock_similarity).
+
+accuracy=0.05861778079542415
+
+param(show_each_nth, 100).
+param(max_nodes, 64).
+param(depth_for_edges, 4).
+param(path_similarity_start, 2).
+param(favor_the_neighbors, false).
+param(similarity, edge_jaccard_similarity).
+
+accuracy=0.07365800464991873
+true.
+
+
+
+% 92,001,465,966 inferences, 4940.995 CPU in 4944.615 seconds (100% CPU, 18620027 Lips)
+param(show_each_nth, 100).
+param(max_nodes, 64).
+param(depth_for_edges, 4).
+param(path_similarity_start, 2).
+param(favor_the_neighbors, false).
+param(similarity, fast_path_similarity).
+
+accuracy=0.05861778079542415
+
+*/
