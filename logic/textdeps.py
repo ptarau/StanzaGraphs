@@ -204,7 +204,7 @@ def home_dir():
 # TESTS
 
 
-def test_merger():
+def test_textdeps():
     text = """
 Logic Programming and Functional Programming are declarative programming paradigms. 
 Evaluation in Logic Programs is eager while for functional programs it may be lazy. 
@@ -230,4 +230,4 @@ for type inference in Functional Programming.
 
 if __name__ == "__main__":
     pass
-    test_merger()
+    test_textdeps()
