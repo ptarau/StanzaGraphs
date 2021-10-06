@@ -9,19 +9,21 @@ c:-make.
 param(show_each_nth,100).
 param(max_nodes,64).
 param(depth_for_edges,4).
-param(path_similarity_start,2).
-param(favor_the_neighbors,false).
+param(path_similarity_start,1).
+param(path_similarity_skip,1).
+param(favor_the_neighbors,true).
 
-param(similarity,fast_path_similarity).
-
-similarity(A,B,Sim):-param(similarity,F),call(F,A,B,Sim).
+param(similarity,set_path_similarity).
 
 % mock_similarity(A,B,S) % 64 -> 0.0.6732
-% fast_path_similarity(A,B,S). % 64 -> 0.6824
+% list_path_similarity(A,B,S). % 64 -> 0.6824
+% set_path_similarity(A,B,S). % 64 ->
 % slow_path_similarity(A,B,S)
 % subtree_similarity(A,B,S). % 64-> accuracy=0.6412
 % node_jaccard_similarity(A,B,S). % 64->0.6814
 % edge_jaccard_similarity(A,B,S). % 64->0.6256 depth 3
+
+similarity(A,B,Sim):-param(similarity,F),call(F,A,B,Sim).
 
 accuracy(Acc):-
    count_nodes('te',Total), % test nodes
@@ -96,14 +98,41 @@ go:-
    writeln(accuracy=Acc).
 
 /*
+
+% 11,047,363 inferences, 3.191 CPU in 3.239 seconds (99% CPU, 3462343 Lips)
 param(show_each_nth, 100).
 param(max_nodes, 64).
 param(depth_for_edges, 4).
 param(path_similarity_start, 2).
-param(similarity, fast_path_similarity).
-param(favor_the_neighbors,true).
+param(favor_the_neighbors, true).
+param(similarity, mock_similarity).
 
-accuracy=0.6746085632574121
+accuracy=0.6732506223895645
+true.
+
+% 12,545,534,366 inferences, 776.115 CPU in 778.681 seconds (100% CPU, 16164536 Lips)
+param(show_each_nth, 100).
+param(max_nodes, 64).
+param(depth_for_edges, 4).
+param(path_similarity_start, 0).
+param(favor_the_neighbors, true).
+param(similarity, fast_path_similarity).
+
+accuracy=0.6751846593831656
+true.
+
+
+
+% 9,128,274,384 inferences, 580.873 CPU in 581.297 seconds (100% CPU, 15714761 Lips)
+param(show_each_nth, 100).
+param(max_nodes, 64).
+param(depth_for_edges, 4).
+param(path_similarity_start, 2).
+param(favor_the_neighbors, true).
+param(similarity, fast_path_similarity).
+
+accuracy=0.6600004114972327
+true.
 
 
 param(show_each_nth, 100).

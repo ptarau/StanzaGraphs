@@ -75,6 +75,8 @@ class Converter:
 
 if __name__ == "__main__":
     #g = from_pickle(PARAMS['DATA_CACHE'] + 'arxiv.pickle')
+    #print('NODES:',g.number_of_nodes(),'EDGES:',g.number_of_edges())
+
     #print('DAG?',nx.is_directed_acyclic_graph(g)) # => False !!!
     C = Converter(mock=5)
     C.run()
