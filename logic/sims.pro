@@ -1,15 +1,18 @@
 mock_similarity(_A,_B,1).
 
-% similarity based on shared subtrees
-subtree_similarity(A,B,Sim):-
-   aggregate_all(sum(Sim),sharing_count(A,B,Sim),Sim).
+% similarity based on shared small subtrees "termlets"
+termlet_similarity(A,B,Sim):-
+   param(max_termlet_size,MaxTS),
+   aggregate_all(sum(Sim),sharing_count(MaxTS,A,B,Sim),Sim).
 
-sharing_count(A,B,Res):-
+sharing_count(MaxTS,A,B,Res):-
   sub_term(T,A),
+  term_size(T,Size0),
+  Size is 1+Size0,
+  Size=<MaxTS,
   occurrences_of_term(T,B,Count),
   Count>0,
-  term_size(T,Size),
-  Res is (1+Size)*Count.
+  Res is Size*Count.
 
 % similarity based on co-paths in the two terms
 
@@ -19,43 +22,36 @@ list_path_similarity(A,B,Sim):-
 set_path_similarity(A,B,Sim):-
   path_aggregator(set_path_weight,A,B, Sim).
 
+
 path_aggregator(F,A,B, Sim):-
    param(path_similarity_start,Depth),
-   param(path_similarity_skip,Skip),
+   aggregate_all(count,call(F,Depth,A,B,_X),Sim).
+
+path_aggregator_alt(F,A,B, Sim):-
+   param(path_similarity_start,Depth),
    term_size(A,S1),term_size(B,S2),Size is 1+min(S1,S2),
-   aggregate_all(sum(X),call(F,Depth,Skip,A,B,X),Weight),
+   aggregate_all(sum(X),call(F,Depth,A,B,X),Weight),
    Sim is Weight/Size.
 
-list_path_weight(Depth,Skip,A,B,Weight):-
+list_path_weight(Depth,A,B,Weight):-
    to_forest(Depth,A,B,S,T),
-   co_path(Skip,S,T,Path),
+   list_co_path(S,T,Path),
    length(Path,Weight).
 
-set_path_weight(Depth,Skip,A,B,Weight):-
+set_path_weight(Depth,A,B,Weight):-
    to_forest(Depth,A,B,S,T),
-   co_set_path(Skip,S,T,Path),
+   set_co_path(S,T,Path),
    length(Path,Weight).
 
-co_set_path(Skip,S,T,Set):-distinct(Set,(co_path(Skip,S,T,Path,[]),sort(Path,Set))).
+set_co_path(S,T,Set):-distinct(Set,(arg_path(S,T,Path),sort(Path,Set))).
 
-co_path(Skip,S,T,Path):-distinct(Path,co_path(Skip,S,T,Path,[])).
+list_co_path(S,T,Path):-arg_path(S,T,Path).
 
 % shared paths in two terms
-
-co_path(_,S,T)-->{atomic(S),atomic(T)},!,emit_atom(S,T).
-co_path(_,S,T)-->{atomic(S),functor(T,F,_)},!,emit_atom(S,F).
-co_path(_,S,T)-->{atomic(T),functor(S,F,_)},!,emit_atom(T,F).
-co_path(Skip,S,T)-->
-  {functor(S,F,_),functor(T,G,_)},
-  maybe_skip(F,G,Skip,SkipLater),
-  {arg(_,S,X),arg(_,T,Y)},
-  co_path(SkipLater,X,Y).
 
 emit_atom(S,S)-->!,[S].
 emit_atom(_,_)-->[].
 
-maybe_skip(F,F,Skip,Skip)-->!,[F].
-maybe_skip(_F,_G,Skip,NewSkip)-->{Skip>0,NewSkip is Skip-1}.
 
 to_forest(0,A,B,S,T):-!,S=A,T=B.
 to_forest(_,A,B,S,T):-atomic(A),!,S=A,T=B.
@@ -63,6 +59,25 @@ to_forest(_,A,B,S,T):-atomic(B),!,S=A,T=B.
 to_forest(D,A,B,S,T):-D>0,DD is D-1,
    arg(_,A,AA),arg(_,B,BB),
    to_forest(DD,AA,BB,S,T).
+
+arg_path_similarity(A,B,Weight):-
+  aggregate_all(sum(X),arg_path_weight(A,B,X),Sum),
+  normalize(Sum,Weight).
+
+arg_path_weight(A,B,Weight):-
+   arg_path(A,B,Path),
+   length(Path,Weight).
+
+arg_path(S,T,Path):-distinct(Path,arg_path(S,T,Path,[])).
+
+arg_path(S,T)-->{atomic(S),atomic(T)},!,emit_atom(S,T).
+arg_path(S,T)-->{atomic(S),functor(T,F,_)},!,emit_atom(S,F).
+arg_path(S,T)-->{atomic(T),functor(S,F,_)},!,emit_atom(T,F).
+arg_path(S,T)-->
+  {functor(S,F,_),functor(T,G,_)},
+  emit_atom(F,G),
+  {arg(_I,S,X),arg(_J,T,Y)},
+  arg_path(X,Y).
 
 
 % jaccard similarity between nodes
@@ -111,6 +126,10 @@ jaccard(Xs,Ys,Sim):-
      Sim is Shared/(L+R-Shared)
    ).
 
+logistic(X,R):-R is 1/(1+exp(-X)).
+
+normalize(X,R):-R is (2/(1+exp(-X)))-1.
+
 % test similarities
 
 simtest:-
@@ -128,13 +147,13 @@ simtest:-
    writeln(node_jaccard=Sim0),
    edge_jaccard_similarity(A,B,Sim1),
    writeln(edge_jaccard=Sim1),
-   subtree_similarity(A,B,Sim2),
-   writeln(subtree=Sim2),
+   termlet_similarity(A,B,Sim2),
+   writeln(termlet=Sim2),
    set_path_similarity(A,B,Sim3),
    writeln(set_path=Sim3),
    set_path_similarity(A,B,Sim4),
    writeln(list_path=Sim4),
-   forall(co_path(0,A,B,Path),writeln(Path)),
+   forall(list_co_path(A,B,Path),writeln(Path)),
    fail
    ;
    writeln(done).

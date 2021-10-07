@@ -2,48 +2,67 @@
 
 c:-make.
 
+:-ensure_loaded('cat_terms.pro').
+:-ensure_loaded('cs_cats.pro').
 :-ensure_loaded('OUTPUT_DIRECTORY/arxiv_all.pro').
 :-ensure_loaded('sims.pro').
 :-ensure_loaded('explainer.pro').
 
+
 param(show_each_nth,100).
-param(max_nodes,64).
+param(max_neighbor_nodes,100).
+param(max_peer_nodes,256).
 param(depth_for_edges,4).
 param(path_similarity_start,1).
-param(path_similarity_skip,1).
+param(max_termlet_size,10).
 param(favor_the_neighbors,true).
+param(train_tags,[tr,va]).
+param(test_tags,[te]).
 
-param(similarity,set_path_similarity).
+
+param(similarity,mock_similarity).
+
+a_similarity(S):-member(S,[
+  mock_similarity,arg_path_similarity,list_path_similarity,set_path_similarity,
+  termlet_similarity,node_jaccard_similarity,edge_jaccard_similarity]
+  ).
 
 % mock_similarity(A,B,S) % 64 -> 0.0.6732
+% arg_path_similarity(A,B,S)
 % list_path_similarity(A,B,S). % 64 -> 0.6824
 % set_path_similarity(A,B,S). % 64 ->
-% slow_path_similarity(A,B,S)
-% subtree_similarity(A,B,S). % 64-> accuracy=0.6412
+% termlet_similarity(A,B,S). % 64-> accuracy=0.6412
 % node_jaccard_similarity(A,B,S). % 64->0.6814
 % edge_jaccard_similarity(A,B,S). % 64->0.6256 depth 3
 
 similarity(A,B,Sim):-param(similarity,F),call(F,A,B,Sim).
 
 accuracy(Acc):-
-   count_nodes('te',Total), % test nodes
+   param(test_tags,TestTags),
+   count_nodes(TestTags,Total), % test nodes
    aggregate_all(count,correct_label,Success),
    Acc is Success/Total.
 
 correct_label:-inferred_label(YtoGuess, YasGuessed),YtoGuess=YasGuessed.
 
 inferred_label(YtoGuess, YasGuessed):-
+   param(test_tags,TestTags),
    writeln('STARTING'),
    param(show_each_nth,M),
-   param(max_nodes,MaxNodes),
+   param(max_neighbor_nodes,MaxNodes),
+   param(max_peer_nodes,MaxPeerNodes),
    most_freq_class(FreqClass),
-   at(N,te,YtoGuess,MyTextTerm,Neighbors),
+   member(TestTag,TestTags),
+   at(N,TestTag,YtoGuess,MyTextTerm,Neighbors),
    (N mod M=:=0->writeln(starting(N));true),
    ( param(favor_the_neighbors,true),
      at_most_n_sols(MaxNodes,YW,
           neighbor_data(MyTextTerm,Neighbors,YW),YWs)->true
-   ; at_most_n_sols(MaxNodes,YW,
-          peer_data(MyTextTerm,YW),YWs)->true
+
+   ; description_data(MyTextTerm,YWs)->true
+   ; at_most_n_sols(MaxPeerNodes,YW,
+          peer_data(MyTextTerm,YW),YWs)->
+          write('.'),true
    ;
      writeln('*** no peer found, assigned'(N=FreqClass)),
      YWs=[FreqClass-1.0]
@@ -61,8 +80,9 @@ peer_data(MyTextTerm,Y-Weight):-
   similar_to(MyTextTerm,_Any,Y,Weight).
 
 similar_to(MyTextTerm, M, Y,Weight):-
-   at(M,Split,Y,ItsTextTerm,_),
-   memberchk(Split,[tr,va]),
+   param(train_tags,TrainTags),
+   member(TrainTag,TrainTags),
+   at(M,TrainTag,Y,ItsTextTerm,_),
    similarity(MyTextTerm,ItsTextTerm,Weight),
    Weight>0.
 
@@ -76,8 +96,8 @@ sum_up(Y-Ws,W-Y):-sumlist(Ws,W).
 at_most_n_sols(N,X,G,Xs):-once(findnsols(N,X,G,Xs)),Xs=[_|_].
 
 
-count_nodes(Kind,Count):-
-   aggregate_all(count,at(_N,Kind,_Y,_Term,_Ns),Count).
+count_nodes(Kinds,Count):-
+   aggregate_all(count,(member(Kind,Kinds),at(_N,Kind,_Y,_Term,_Ns)),Count).
 
 most_freq_class(FreqClass):-
    findall(Y-1,at(_N,_Kind,Y,_Term,_Ns),YNs),
@@ -89,91 +109,49 @@ most_freq_class(FreqClass):-
      max(Count,FreqClass)
    ).
 
+label_to_term(Label,Term):-
+  cat(Label,Category),
+  desc(Category,Term).
 
+sim_cat(Similarity,Term,Sim,Label):-
+  label_to_term(Label,CatTerm),
+  call(Similarity,Term,CatTerm,Sim).
+
+cat_guess(Similarity,Term,Label,Sim):-
+  aggregate_all(max(Sim,Label),sim_cat(Similarity,Term,Sim,Label),max(Sim,Label)).
+
+
+description_data(MyTextTerm,[Y-W]):-
+  cat_guess(similarity,MyTextTerm,Y,W),
+  W>0.
+
+guess_count(Similarity,Kinds,C):-
+  aggregate_all(count,(member(Kind,Kinds),at(_,Kind,Y,T,_Ns),cat_guess(Similarity,T,_,L),Y=L),C).
+
+
+guess:-
+   %guess([tr,va]),
+   guess([te]).
+
+guess(Kinds):-
+  count_nodes(Kinds,Total),
+  writeln(starting(Kinds,Total)),nl,
+  do((
+    a_similarity(Similarity),
+    writeln(testing(Similarity)),
+    guess_count(Similarity,Kinds,C),
+    Perc is round(10000*C/Total)/100,
+    writeln([Similarity,Kinds]:[C/Total=Perc,'%']),nl
+  )).
+
+
+do(Gs):-Gs,fail;true.
+
+param:-listing(param/2).
 
 go:-
-   listing(param),
+   param,
    time(accuracy(Acc)),
-   listing(param),
+   param,
    writeln(accuracy=Acc).
 
-/*
-
-% 11,047,363 inferences, 3.191 CPU in 3.239 seconds (99% CPU, 3462343 Lips)
-param(show_each_nth, 100).
-param(max_nodes, 64).
-param(depth_for_edges, 4).
-param(path_similarity_start, 2).
-param(favor_the_neighbors, true).
-param(similarity, mock_similarity).
-
-accuracy=0.6732506223895645
-true.
-
-% 12,545,534,366 inferences, 776.115 CPU in 778.681 seconds (100% CPU, 16164536 Lips)
-param(show_each_nth, 100).
-param(max_nodes, 64).
-param(depth_for_edges, 4).
-param(path_similarity_start, 0).
-param(favor_the_neighbors, true).
-param(similarity, fast_path_similarity).
-
-accuracy=0.6751846593831656
-true.
-
-
-
-% 9,128,274,384 inferences, 580.873 CPU in 581.297 seconds (100% CPU, 15714761 Lips)
-param(show_each_nth, 100).
-param(max_nodes, 64).
-param(depth_for_edges, 4).
-param(path_similarity_start, 2).
-param(favor_the_neighbors, true).
-param(similarity, fast_path_similarity).
-
-accuracy=0.6600004114972327
-true.
-
-
-param(show_each_nth, 100).
-param(max_nodes, 64).
-param(depth_for_edges, 4).
-param(path_similarity_start, 2).
-param(favor_the_neighbors, false).
-param(similarity, node_jaccard_similarity).
-
-accuracy=0.05865893051869226
-
-
-param(show_each_nth, 100).
-param(max_nodes, 64).
-param(depth_for_edges, 4).
-param(path_similarity_start, 2).
-param(favor_the_neighbors, false).
-param(similarity, mock_similarity).
-
-accuracy=0.05861778079542415
-
-param(show_each_nth, 100).
-param(max_nodes, 64).
-param(depth_for_edges, 4).
-param(path_similarity_start, 2).
-param(favor_the_neighbors, false).
-param(similarity, edge_jaccard_similarity).
-
-accuracy=0.07365800464991873
-true.
-
-
-
-% 92,001,465,966 inferences, 4940.995 CPU in 4944.615 seconds (100% CPU, 18620027 Lips)
-param(show_each_nth, 100).
-param(max_nodes, 64).
-param(depth_for_edges, 4).
-param(path_similarity_start, 2).
-param(favor_the_neighbors, false).
-param(similarity, fast_path_similarity).
-
-accuracy=0.05861778079542415
-
-*/
