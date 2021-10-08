@@ -19,16 +19,19 @@ param(favor_the_neighbors,true).
 param(train_tags,[tr,va]).
 param(test_tags,[te]).
 
-
-param(similarity,mock_similarity).
+param(similarity,forest_path_similarity).
 
 a_similarity(S):-member(S,[
-  mock_similarity,arg_path_similarity,list_path_similarity,set_path_similarity,
-  termlet_similarity,node_jaccard_similarity,edge_jaccard_similarity]
+  mock_similarity,
+  shared_path_similarity,
+  forest_path_similarity,
+  termlet_similarity,
+  node_jaccard_similarity,
+  edge_jaccard_similarity]
   ).
 
 % mock_similarity(A,B,S) % 64 -> 0.0.6732
-% arg_path_similarity(A,B,S)
+% shared_path_similarity(A,B,S)
 % list_path_similarity(A,B,S). % 64 -> 0.6824
 % set_path_similarity(A,B,S). % 64 ->
 % termlet_similarity(A,B,S). % 64-> accuracy=0.6412
@@ -51,6 +54,7 @@ inferred_label(YtoGuess, YasGuessed):-
    param(show_each_nth,M),
    param(max_neighbor_nodes,MaxNodes),
    param(max_peer_nodes,MaxPeerNodes),
+   param(similarity,Similarity),
    most_freq_class(FreqClass),
    member(TestTag,TestTags),
    at(N,TestTag,YtoGuess,MyTextTerm,Neighbors),
@@ -59,7 +63,8 @@ inferred_label(YtoGuess, YasGuessed):-
      at_most_n_sols(MaxNodes,YW,
           neighbor_data(MyTextTerm,Neighbors,YW),YWs)->true
 
-   ; description_data(MyTextTerm,YWs)->true
+   ; description_data(Similarity,MyTextTerm,YWs)->
+           write('-'),true
    ; at_most_n_sols(MaxPeerNodes,YW,
           peer_data(MyTextTerm,YW),YWs)->
           write('.'),true
@@ -117,17 +122,49 @@ sim_cat(Similarity,Term,Sim,Label):-
   label_to_term(Label,CatTerm),
   call(Similarity,Term,CatTerm,Sim).
 
-cat_guess(Similarity,Term,Label,Sim):-
+cat_guess(Similarity,Term,Sim,Label):-
   aggregate_all(max(Sim,Label),sim_cat(Similarity,Term,Sim,Label),max(Sim,Label)).
 
 
-description_data(MyTextTerm,[Y-W]):-
-  cat_guess(similarity,MyTextTerm,Y,W),
-  W>0.
+description_data(Similarity,MyTextTerm,[Label-Sim]):-
+  cat_guess(Similarity,MyTextTerm,Sim,Label),
+  Sim>0.
 
 guess_count(Similarity,Kinds,C):-
   aggregate_all(count,(member(Kind,Kinds),at(_,Kind,Y,T,_Ns),cat_guess(Similarity,T,_,L),Y=L),C).
 
+/*
+cited_from(Froms,Tos,Label, N):-
+  cat(Label,_),
+  aggregate(count,cites_with(Label,Froms,Tos,_),N).
+*/
+
+
+most_cited_with(Label,Froms,Tos,Count,Old):-
+   cat(Label,_),
+   aggregate(max(Count,Old),
+      count_with(Label,Froms,Tos,Count,Old),
+      max(Count,Old)).
+
+count_with(Label,Froms,Tos,Count,Old):-
+   member(To,Tos),
+   at(Old,To,Label,_,_),
+   aggregate(count,cited_with(Label,Froms,Old),Count).
+
+cited_with(Label,Froms,Old):-
+  member(From,Froms),
+  at(_New,From,Label,_,Ns),
+  member(Old,Ns).
+
+
+most_cited:-
+   %tell('most_cited.pro'),
+   do((
+     most_cited_with(Label,[tr,va],[tr,va],Count,Cited),
+     portray_clause(most_cited(Label,Cited,Count))
+   )),
+   %told,
+   true.
 
 guess:-
    %guess([tr,va]),
