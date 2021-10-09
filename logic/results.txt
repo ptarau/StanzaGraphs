@@ -1,4 +1,3 @@
-
 ?- guess.
 starting([te],48603)
 
@@ -6,11 +5,10 @@ testing(mock_similarity)
 [mock_similarity,[te]]:[54/48603=0.11,%]
 
 testing(shared_path_similarity)
-[arg_path_similarity,[te]]:[2348/48603=4.83,%]
+[shared_path_similarity,[te]]:[2348/48603=4.83,%]
 
-testing(forest_similarity)
-[list_path_similarity,[te]]:[685/48603=1.41,%]
-
+testing(forest_path_similarity)
+[forest_path_similarity,[te]]:[2197/48603=4.52,%]
 
 testing(termlet_similarity)
 [termlet_similarity,[te]]:[1927/48603=3.96,%]
@@ -22,6 +20,7 @@ testing(edge_jaccard_similarity)
 [edge_jaccard_similarity,[te]]:[4292/48603=8.83,%]
 
 true.
+
 
 =================
 
