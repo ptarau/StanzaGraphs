@@ -6,11 +6,11 @@ param(max_peer_nodes,256).
 param(depth_for_edges,4).
 param(path_similarity_start,1).
 param(max_termlet_size,10).
-param(favor_the_neighbors,true).
+param(content_only,false).
 param(train_tags,[tr,va]).
 param(test_tags,[te]).
 
-param(similarity,shared_path_similarity).
+param(similarity,node_jaccard_similarity).
 
 a_similarity(S):-member(S,[
   mock_similarity,
@@ -20,15 +20,6 @@ a_similarity(S):-member(S,[
   node_jaccard_similarity,
   edge_jaccard_similarity]
   ).
-
-% mock_similarity(A,B,S) % 64 -> 0.0.6732
-% shared_path_similarity(A,B,S)
-% list_path_similarity(A,B,S). % 64 -> 0.6824
-% set_path_similarity(A,B,S). % 64 ->
-% termlet_similarity(A,B,S). % 64-> accuracy=0.6412
-% node_jaccard_similarity(A,B,S). % 64->0.6814
-% edge_jaccard_similarity(A,B,S). % 64->0.6256 depth 3
-
 
 trainer_at(N,Y,T,Ns):-
   param(train_tags,TrTags),
@@ -58,7 +49,7 @@ inferred_label(YtoGuess, YasGuessed):-
    most_freq_class(FreqClass),
    tester_at(N,YtoGuess,MyTextTerm,Neighbors),
    (N mod M=:=0->writeln(starting(N));true),
-   ( param(favor_the_neighbors,true),
+   ( param(content_only,true),
      at_most_n_sols(MaxNodes,YW,
           neighbor_data(MyTextTerm,Neighbors,YW),YsAndWeights)->true
    ; description_data(MyTextTerm,YsAndWeights)->
@@ -104,13 +95,13 @@ peer_data(MyTextTerm,Y-Weight):-
 
 similar_to(MyTextTerm, M, Y,Weight):-
    trainer_at(M,Y,ItsTextTerm,_NNeighbors),
-   %/*
+   /*
    once((
      % ensure Y is shared with at least one neighbor
      member(MM,NNeighbors),
      trainer_at(MM,Y,_,_)
    )),
-   %*/
+   */
    similarity(MyTextTerm,ItsTextTerm,Weight),
    Weight>0.
 
@@ -136,39 +127,11 @@ most_freq_class(FreqClass):-
      max(Count,FreqClass)
    ).
 
-label_to_term(Label,Term):-
-  cat(Label,Category),
-  desc(Category,Term).
-
-sim_cat(Similarity,Term,Sim,Label):-
-  label_to_term(Label,CatTerm),
-  call(Similarity,Term,CatTerm,Sim).
-
-cat_guess(Similarity,Term,Sim,Label):-
-  aggregate_all(max(Sim,Label),sim_cat(Similarity,Term,Sim,Label),max(Sim,Label)).
-
-guess_count(Similarity,Kinds,C):-
-  aggregate_all(count,(member(Kind,Kinds),at(_,Kind,Y,T,_Ns),cat_guess(Similarity,T,_,L),Y=L),C).
-
-most_cited_with(Label,Froms,Tos,Count,Old):-
-   cat(Label,_),
-   aggregate(max(Count,Old),
-      count_with(Label,Froms,Tos,Count,Old),
-      max(Count,Old)).
-
-count_with(Label,Froms,Tos,Count,Old):-
-   member(To,Tos),
-   at(Old,To,Label,_,_),
-   aggregate(count,cited_with(Label,Froms,Old),Count).
-
-cited_with(Label,Froms,Old):-
-  member(From,Froms),
-  at(_New,From,Label,_,Ns),
-  member(Old,Ns).
+% using most cited in each class as a prototype
 
 
 most_cited:-
-   tell('most_cited.pro'),
+   tell('most_cited.pro'), % lomng to compute, saved to file
    do((
      most_cited_with(Label,[tr,va],[tr,va],Count,Cited),
      portray_clause(most_cited(Label,Cited,Count))
@@ -176,20 +139,25 @@ most_cited:-
    told,
    true.
 
-guess:-
-   %guess([tr,va]),
-   guess([te]).
 
-guess(Kinds):-
-  count_nodes(Kinds,Total),
-  writeln(starting(Kinds,Total)),nl,
-  do((
-    a_similarity(Similarity),
-    writeln(testing(Similarity)),
-    guess_count(Similarity,Kinds,C),
-    Perc is round(10000*C/Total)/100,
-    writeln([Similarity,Kinds]:[C/Total=Perc,'%']),nl
-  )).
+most_cited_with(Label,Froms,Tos,Count,Old):-
+   cat(Label,_),
+   aggregate(max(Count,Old),
+      count_with(Label,Froms,Tos,Count,Old),
+      max(Count,Old)).
+
+
+count_with(Label,Froms,Tos,Count,Old):-
+   member(To,Tos),
+   at(Old,To,Label,_,_),
+   aggregate(count,cited_with(Label,Froms,Old),Count).
+
+
+cited_with(Label,Froms,Old):-
+  member(From,Froms),
+  at(_New,From,Label,_,Ns),
+  member(Old,Ns).
+
 
 
 do(Gs):-Gs,fail;true.

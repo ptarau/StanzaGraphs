@@ -1,5 +1,39 @@
 % todo
 
+% guessing the closest with several similarities
+
+guess:-
+   %guess([tr,va]),
+   guess([te]).
+
+guess(Kinds):-
+  count_nodes(Kinds,Total),
+  writeln(starting(Kinds,Total)),nl,
+  do((
+    a_similarity(Similarity),
+    writeln(testing(Similarity)),
+    guess_count(Similarity,Kinds,C),
+    Perc is round(10000*C/Total)/100,
+    writeln([Similarity,Kinds]:[C/Total=Perc,'%']),nl
+  )).
+
+guess_count(Similarity,Kinds,C):-
+  aggregate_all(count,(member(Kind,Kinds),at(_,Kind,Y,T,_Ns),cat_guess(Similarity,T,_,L),Y=L),C).
+
+cat_guess(Similarity,Term,Sim,Label):-
+  aggregate_all(max(Sim,Label),sim_cat(Similarity,Term,Sim,Label),max(Sim,Label)).
+
+
+sim_cat(Similarity,Term,Sim,Label):-
+  label_to_term(Label,CatTerm),
+  call(Similarity,Term,CatTerm,Sim).
+
+label_to_term(Label,Term):-
+  cat(Label,Category),
+  desc(Category,Term).
+
+
+
 network_guessable(N):-
   at(N,te,Y,_T,Ms),
   once((

@@ -11,6 +11,7 @@ sharing_count(MaxTS,A,B,Res):-
   Size is 1+Size0,
   Size=<MaxTS,
   occurrences_of_term(T,B,Count),
+
   Count>0,
   Res is Size*Count.
 

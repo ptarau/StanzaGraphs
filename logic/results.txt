@@ -5,14 +5,12 @@ starting([te],48603)
 testing(mock_similarity)
 [mock_similarity,[te]]:[54/48603=0.11,%]
 
-testing(arg_path_similarity)
+testing(shared_path_similarity)
 [arg_path_similarity,[te]]:[2348/48603=4.83,%]
 
-testing(list_path_similarity)
+testing(forest_similarity)
 [list_path_similarity,[te]]:[685/48603=1.41,%]
 
-testing(set_path_similarity)
-[set_path_similarity,[te]]:[685/48603=1.41,%]
 
 testing(termlet_similarity)
 [termlet_similarity,[te]]:[1927/48603=3.96,%]
@@ -118,3 +116,35 @@ param(similarity, node_jaccard_similarity). <==
 
 accuracy=0.6830031068041067
 
+===== content only ====
+
+
+% 235,175,324 inferences, 48.520 CPU in 48.608 seconds (100% CPU, 4846967 Lips)
+param(show_each_nth, 100).
+param(max_neighbor_nodes, 100).
+param(max_peer_nodes, 256).
+param(depth_for_edges, 4).
+param(path_similarity_start, 1).
+param(max_termlet_size, 10).
+param(favor_the_neighbors, false).
+param(train_tags, [tr, va]).
+param(test_tags, [te]).
+param(similarity, mock_similarity).
+
+accuracy=0.05861778079542415
+true.
+
+% 22,548,836,765 inferences, 1741.701 CPU in 1754.414 seconds (99% CPU, 12946443 Lips)
+param(show_each_nth, 100).
+param(max_neighbor_nodes, 100).
+param(max_peer_nodes, 256).
+param(depth_for_edges, 4).
+param(path_similarity_start, 1).
+param(max_termlet_size, 10).
+param(content_only, false).
+param(train_tags, [tr, va]).
+param(test_tags, [te]).
+param(similarity, node_jaccard_similarity).
+
+accuracy=0.05814455897784088
+true.
