@@ -1,14 +1,5 @@
 %:-set_prolog_flag(stack_limit,34359738368).
 
-c:-make.
-
-:-ensure_loaded('cat_terms.pro').
-:-ensure_loaded('cs_cats.pro').
-:-ensure_loaded('OUTPUT_DIRECTORY/arxiv_all.pro').
-:-ensure_loaded('sims.pro').
-:-ensure_loaded('explainer.pro').
-
-
 param(show_each_nth,100).
 param(max_neighbor_nodes,100).
 param(max_peer_nodes,256).
@@ -19,7 +10,7 @@ param(favor_the_neighbors,true).
 param(train_tags,[tr,va]).
 param(test_tags,[te]).
 
-param(similarity,forest_path_similarity).
+param(similarity,shared_path_similarity).
 
 a_similarity(S):-member(S,[
   mock_similarity,
@@ -38,6 +29,17 @@ a_similarity(S):-member(S,[
 % node_jaccard_similarity(A,B,S). % 64->0.6814
 % edge_jaccard_similarity(A,B,S). % 64->0.6256 depth 3
 
+
+trainer_at(N,Y,T,Ns):-
+  param(train_tags,TrTags),
+  member(Tag,TrTags),
+  at(N,Tag,Y,T,Ns).
+
+tester_at(N,Y,T,Ns):-
+  param(test_tags,TeTags),
+  member(Tag,TeTags),
+  at(N,Tag,Y,T,Ns).
+
 similarity(A,B,Sim):-param(similarity,F),call(F,A,B,Sim).
 
 accuracy(Acc):-
@@ -49,45 +51,66 @@ accuracy(Acc):-
 correct_label:-inferred_label(YtoGuess, YasGuessed),YtoGuess=YasGuessed.
 
 inferred_label(YtoGuess, YasGuessed):-
-   param(test_tags,TestTags),
    writeln('STARTING'),
    param(show_each_nth,M),
    param(max_neighbor_nodes,MaxNodes),
    param(max_peer_nodes,MaxPeerNodes),
-   param(similarity,Similarity),
    most_freq_class(FreqClass),
-   member(TestTag,TestTags),
-   at(N,TestTag,YtoGuess,MyTextTerm,Neighbors),
+   tester_at(N,YtoGuess,MyTextTerm,Neighbors),
    (N mod M=:=0->writeln(starting(N));true),
    ( param(favor_the_neighbors,true),
      at_most_n_sols(MaxNodes,YW,
-          neighbor_data(MyTextTerm,Neighbors,YW),YWs)->true
-
-   ; description_data(Similarity,MyTextTerm,YWs)->
-           write('-'),true
+          neighbor_data(MyTextTerm,Neighbors,YW),YsAndWeights)->true
+   ; description_data(MyTextTerm,YsAndWeights)->
+          write('-'),true
    ; at_most_n_sols(MaxPeerNodes,YW,
-          peer_data(MyTextTerm,YW),YWs)->
+          peer_data(MyTextTerm,YW),YsAndWeights)->
           write('.'),true
    ;
-     writeln('*** no peer found, assigned'(N=FreqClass)),
-     YWs=[FreqClass-1.0]
+     writeln('*** no peer found, assigned most frequent'(N=FreqClass)),
+     YsAndWeights=[FreqClass-1.0]
    ),
-   keygroups(YWs,YWss),
-   maplist(sum_up,YWss,WYs),
-   (max_member(_-YasGuessed,WYs)->true;writeln(unexpected_fail=N)),
+   vote_for_best_label(YsAndWeights,YasGuessed),
    (N mod M=:=0->writeln(done(N,(YasGuessed->YtoGuess))),nl;true).
+
+vote_for_best_label(YsAndWeights,YasGuessed):-
+   keygroups(YsAndWeights,YsAndWeightss),
+   maplist(sum_up,YsAndWeightss,WeightAndYs),
+   max_member(_-YasGuessed,WeightAndYs).
 
 neighbor_data(MyTextTerm,Neighbors,Y-Weight):-
   member(M,Neighbors),
   similar_to(MyTextTerm,M,Y,Weight).
 
+
+description_data(MyTextTerm,[Label-Sim]):-
+ param(similarity,Similarity),
+ description_data(Similarity,MyTextTerm,[Label-Sim]).
+
+description_data(Similarity,MyTextTerm,[Label-Sim]):-
+  cat_guess(Similarity,MyTextTerm,Sim1,Label),
+  proto_guess(Similarity,MyTextTerm,[Label-Sim2]),
+  Sim is (Sim1+Sim2)/2,
+  Sim>0.
+
+proto_guess(Similarity,MyTextTerm,[Label-Sim]):-
+  most_cited(Label,_,M),
+  trainer_at(M,Label,Term,_),
+  call(Similarity,MyTextTerm,Term,Sim),
+  Sim>0.
+
 peer_data(MyTextTerm,Y-Weight):-
   similar_to(MyTextTerm,_Any,Y,Weight).
 
 similar_to(MyTextTerm, M, Y,Weight):-
-   param(train_tags,TrainTags),
-   member(TrainTag,TrainTags),
-   at(M,TrainTag,Y,ItsTextTerm,_),
+   trainer_at(M,Y,ItsTextTerm,_NNeighbors),
+   %/*
+   once((
+     % ensure Y is shared with at least one neighbor
+     member(MM,NNeighbors),
+     trainer_at(MM,Y,_,_)
+   )),
+   %*/
    similarity(MyTextTerm,ItsTextTerm,Weight),
    Weight>0.
 
@@ -95,8 +118,7 @@ keygroups(Ps,KXs):-
    keysort(Ps,Ss),
    group_pairs_by_key(Ss,KXs).
 
-
-sum_up(Y-Ws,W-Y):-sumlist(Ws,W).
+sum_up(Y-Ws,Weight-Y):-sumlist(Ws,Weight).
 
 at_most_n_sols(N,X,G,Xs):-once(findnsols(N,X,G,Xs)),Xs=[_|_].
 
@@ -125,20 +147,8 @@ sim_cat(Similarity,Term,Sim,Label):-
 cat_guess(Similarity,Term,Sim,Label):-
   aggregate_all(max(Sim,Label),sim_cat(Similarity,Term,Sim,Label),max(Sim,Label)).
 
-
-description_data(Similarity,MyTextTerm,[Label-Sim]):-
-  cat_guess(Similarity,MyTextTerm,Sim,Label),
-  Sim>0.
-
 guess_count(Similarity,Kinds,C):-
   aggregate_all(count,(member(Kind,Kinds),at(_,Kind,Y,T,_Ns),cat_guess(Similarity,T,_,L),Y=L),C).
-
-/*
-cited_from(Froms,Tos,Label, N):-
-  cat(Label,_),
-  aggregate(count,cites_with(Label,Froms,Tos,_),N).
-*/
-
 
 most_cited_with(Label,Froms,Tos,Count,Old):-
    cat(Label,_),
@@ -158,12 +168,12 @@ cited_with(Label,Froms,Old):-
 
 
 most_cited:-
-   %tell('most_cited.pro'),
+   tell('most_cited.pro'),
    do((
      most_cited_with(Label,[tr,va],[tr,va],Count,Cited),
      portray_clause(most_cited(Label,Cited,Count))
    )),
-   %told,
+   told,
    true.
 
 guess:-

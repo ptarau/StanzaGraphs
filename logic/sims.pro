@@ -34,10 +34,6 @@ forest_path_weight(Depth,A,B,Weight):-
 
 % shared paths in two terms
 
-emit_atom(S,S)-->!,[S].
-emit_atom(_,_)-->[].
-
-
 to_forest(0,A,B,S,T):-!,S=A,T=B.
 to_forest(_,A,B,S,T):-atomic(A),!,S=A,T=B.
 to_forest(_,A,B,S,T):-atomic(B),!,S=A,T=B.
@@ -53,7 +49,7 @@ shared_path_weight(A,B,Weight):-
    shared_path(A,B,Path),
    length(Path,Weight).
 
-shared_path(S,T,Path):-distinct(Path,shared_path(S,T,Path,[])).
+shared_path(S,T,Path):-distinct(Path,shared_path(S,T,Path,[])),Path=[_|_].
 
 shared_path(S,T)-->{atomic(S),atomic(T)},!,emit_atom(S,T).
 shared_path(S,T)-->{atomic(S),functor(T,F,_)},!,emit_atom(S,F).
@@ -63,6 +59,9 @@ shared_path(S,T)-->
   emit_atom(F,G),
   {arg(_I,S,X),arg(_J,T,Y)},
   shared_path(X,Y).
+
+emit_atom(S,S)-->!,[S].
+emit_atom(_,_)-->[].
 
 
 % jaccard similarity between nodes

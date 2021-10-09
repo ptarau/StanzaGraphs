@@ -1,1 +1,1 @@
-swipl -s thinker.pro
+swipl -s all.pro
