@@ -1,4 +1,6 @@
-% todo
+:-ensure_loaded('cat_terms.pro').
+:-ensure_loaded('most_cited.pro').
+
 
 % guessing the closest with several similarities
 
@@ -61,27 +63,71 @@ network_limits:-
   )).
 
 
-nlp_guessable_with(Similarity,N):-
+content_guessable_with(Similarity,N):-
    tester_at(N,Y,T,_),
    once((
      trainer_at(_M,Y,OtherT,_),
      call(Similarity,T,OtherT,Sim),
-     Sim>0
+     %writeln(Similarity=Sim),
+     Sim>0.05
    )).
 
-nlp_guessables_with(Similarity,Count):-
-  aggregate_all(count,N,nlp_guessable_with(Similarity,N),Count).
+content_guessables_with(Similarity,Count):-
+  aggregate_all(count,N,content_guessable_with(Similarity,N),Count).
 
-nlp_guessable_ratio(Similarity,GCount/TCount=R):-
+content_guessable_ratio(Similarity,GCount/TCount=R):-
   testables(TCount),
-  nlp_guessables_with(Similarity,GCount),
+  content_guessables_with(Similarity,GCount),
   R is GCount/TCount.
+
+
+description_data(MyTextTerm,[Label-Sim]):-
+ param(similarity,Similarity),
+ aggregate(max(Sim,Label),
+    proto_guess(Similarity,MyTextTerm,Label-Sim),max(Sim,Label)),
+    Sim>0.1.
+
+proto_guess(Similarity,MyTextTerm,Label-Sim):-
+
+  most_cited(Label,_,M),
+  trainer_at(M,Label,Term,_),
+  call(Similarity,MyTextTerm,Term,Sim).
+
+% using most cited in each class as a prototype
+
+
+most_cited:-
+   %tell('most_cited.pro'), % lomng to compute, saved to file
+   do((
+     most_cited_with(Label,Count,Cited),
+     portray_clause(most_cited(Label,Cited,Count))
+   )),
+   %told,
+   true.
+
+
+most_cited_with(Label,Count,Old):-
+   cat(Label,_),
+   aggregate(max(Count,Old),
+      count_with(Label,Count,Old),
+      max(Count,Old)).
+
+
+count_with(Label,Count,Old):-
+   trainer_at(Old,Label,_,_),
+   aggregate(count,cited_with(Label,Old),Count).
+
+
+cited_with(Label,Old):-
+  trainer_at(_New,Label,_,Ns),
+  member(Old,Ns).
+
 
 
 content_limits:-
   do((
     a_similarity(Similarity),
-    nlp_guessable_ratio(Similarity,Result),
+    content_guessable_ratio(Similarity,Result),
     writeln((Similarity->Result))
   )).
 

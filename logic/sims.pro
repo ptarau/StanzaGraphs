@@ -1,9 +1,10 @@
 mock_similarity(_A,_B,1).
 
 % similarity based on shared small subtrees "termlets"
-termlet_similarity(A,B,Sim):-
+termlet_similarity(A,B,Weight):-
    param(max_termlet_size,MaxTS),
-   aggregate_all(sum(Sim),sharing_count(MaxTS,A,B,Sim),Sim).
+   aggregate_all(sum(Sim),sharing_count(MaxTS,A,B,Sim),Sim),
+   normalize(Sim,Weight).
 
 sharing_count(MaxTS,A,B,Res):-
   sub_term(T,A),
@@ -130,16 +131,25 @@ simtest:-
    ord_union(Xs,Ys,Us),
    writeln(Zs),
    writeln(Us),
-   node_jaccard_similarity(A,B,Sim0),
-   writeln(node_jaccard=Sim0),
-   edge_jaccard_similarity(A,B,Sim1),
-   writeln(edge_jaccard=Sim1),
-   termlet_similarity(A,B,Sim2),
-   writeln(termlet=Sim2),
-   shared_path_similarity(A,B,Sim3),
-   writeln(shared_path=Sim3),
-   forest_path_similarity(A,B,Sim4),
-   writeln(forest_path=Sim4),
+   nl,
+   do((
+     a_similarity(F),
+     call(F,A,B,Sim),
+     writeln(F=Sim)
+   )),nl,
+
+   do((
+     a_similarity(F),
+     call(F,f(a),g(a),Sim),
+     writeln(F=Sim)
+   )),nl,
+
+   do((
+     a_similarity(F),
+     call(F,f,g,Sim),
+     writeln(F=Sim)
+   )),nl,
+
    forall(shared_path(A,B,Path),writeln(Path)),
    fail
    ;
