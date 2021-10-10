@@ -22,6 +22,50 @@ testing(edge_jaccard_similarity)
 true.
 
 
+...
+% 1,330,950,401 inferences, 107.686 CPU in 108.501 seconds (99% CPU, 12359538 Lips)
+param(show_each_nth, 100).
+param(max_neighbor_nodes, 100).
+param(max_peer_nodes, 4).
+param(neighbor_kind, any).
+param(depth_for_edges, 4).
+param(path_similarity_start, 1).
+param(max_termlet_size, 10).
+param(train_tags, [tr, va]).
+param(test_tags, [te]).
+param(similarity, node_jaccard_similarity).
+
+accuracy=0.686048186325947
+true.
+
+
+
+% 1,136,229,481 inferences, 94.020 CPU in 95.996 seconds (98% CPU, 12084953 Lips)
+param(show_each_nth, 100).
+param(max_neighbor_nodes, 100).
+param(max_peer_nodes, 4).
+param(neighbor_kind, diverse).
+param(depth_for_edges, 4).
+param(path_similarity_start, 1).
+param(max_termlet_size, 10).
+param(train_tags, [tr, va]).
+param(test_tags, [te]).
+param(similarity, node_jaccard_similarity).
+
+accuracy=0.6607616813776928
+true.
+
+
+
+
+
+
+
+
+
+
+================ OLD =========
+
 =================
 
 % 55,517,447,975 inferences, 3200.867 CPU in 3202.353 seconds (100% CPU, 17344506 Lips)

@@ -25,6 +25,8 @@ guess_count(Similarity,Kinds,C):-
 cat_guess(Similarity,Term,Sim,Label):-
   aggregate_all(max(Sim,Label),sim_cat(Similarity,Term,Sim,Label),max(Sim,Label)).
 
+count_nodes(Kinds,Count):-
+  aggregate_all(count,(member(Kind,Kinds),at(_N,Kind,_Y,_Term,_Ns)),Count).
 
 sim_cat(Similarity,Term,Sim,Label):-
   label_to_term(Label,CatTerm),
