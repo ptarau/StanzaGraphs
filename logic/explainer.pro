@@ -12,7 +12,7 @@ guess(Kinds):-
   count_nodes(Kinds,Total),
   writeln(starting(Kinds,Total)),nl,
   do((
-    a_similarity(Similarity),
+    a_similarity(Similarity-_),
     writeln(testing(Similarity)),
     guess_count(Similarity,Kinds,C),
     Perc is round(10000*C/Total)/100,
@@ -65,13 +65,15 @@ network_limits:-
   )).
 
 
-content_guessable_with(Similarity,N):-
+content_guessable_with(Similarity-MinVal,N):-
+   select_diverse_peers(Peers),
    tester_at(N,Y,T,_),
    once((
-     trainer_at(_M,Y,OtherT,_),
+     member(M,Peers),
+     trainer_at(M,Y,OtherT,_),
      call(Similarity,T,OtherT,Sim),
      %writeln(Similarity=Sim),
-     Sim>0.05
+     Sim>MinVal
    )).
 
 content_guessables_with(Similarity,Count):-

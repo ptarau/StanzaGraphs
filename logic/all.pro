@@ -10,4 +10,4 @@ c:-make.
 :-ensure_loaded('OUTPUT_DIRECTORY/arxiv_all.pro').
 
 % optional, fo analyzing results
-%:-ensure_loaded('explainer.pro').
+:-ensure_loaded('explainer.pro').

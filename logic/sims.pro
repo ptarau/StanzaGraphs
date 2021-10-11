@@ -1,4 +1,4 @@
-mock_similarity(_A,_B,1).
+mock_similarity(_A,_B,0.1).
 
 % similarity based on shared small subtrees "termlets"
 termlet_similarity(A,B,Weight):-

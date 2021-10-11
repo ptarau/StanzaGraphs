@@ -1,24 +1,24 @@
 %:-set_prolog_flag(stack_limit,34359738368).
 
-param(show_each_nth,100).
+param(show_each_nth,10000).
 param(max_neighbor_nodes,100).
 param(max_peer_nodes,4).
-param(neighbor_kind,any). % any, diverse, none
+param(neighbor_kind,diverse). % any, diverse, none
 param(depth_for_edges,4).
 param(path_similarity_start,1).
 param(max_termlet_size,4).
 param(train_tags,[tr,va]).
 param(test_tags,[te]).
 
-param(similarity,node_jaccard_similarity).
+param(similarity,mock_similarity).
 
 a_similarity(S):-member(S,[
-  mock_similarity,
-  node_jaccard_similarity,
-  shared_path_similarity,
-  edge_jaccard_similarity,
-  forest_path_similarity,
-  termlet_similarity
+  mock_similarity-0.1,
+  node_jaccard_similarity-0.1,
+  shared_path_similarity-1.0,
+  edge_jaccard_similarity-0.1,
+  forest_path_similarity-1.0,
+  termlet_similarity-1.0
   ]
   ).
 
@@ -26,7 +26,7 @@ a_similarity(S):-member(S,[
 similarity(A,B,Sim):-param(similarity,F),call(F,A,B,Sim).
 
 accuracy(Acc):-
-   test_size(Total), % nb of. test nodes
+   test_size(Total), % total number of test nodes
    aggregate_all(count,correct_label,Success),
    Acc is Success/Total.
 
@@ -36,7 +36,7 @@ inferred_label(YtoGuess, YasGuessed):-
    writeln('STARTING'),
    param(show_each_nth,M),
    param(max_neighbor_nodes,MaxNodes),
-   param(neighbor_kind,NK),
+   param(neighbor_kind,NK), % NK is one of any, diverse, none
    most_freq_class(FreqClass),
    select_diverse_peers(Peers),
    tester_at(N,YtoGuess,MyTextTerm,Neighbors),
