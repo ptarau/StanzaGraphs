@@ -1,6 +1,6 @@
 %:-set_prolog_flag(stack_limit,34359738368).
 
-param(show_each_nth,1000).
+param(show_each_nth,100).
 param(max_neighbor_nodes,100).
 param(max_peer_nodes,4).
 param(neighbor_kind,any). % any, diverse, none
@@ -10,7 +10,7 @@ param(max_termlet_size,4).
 param(train_tags,[tr,va]).
 param(test_tags,[te]).
 
-param(similarity,mock_similarity).
+param(similarity,node_jaccard_similarity).
 
 is_similarity(mock_similarity,0.0).
 is_similarity(node_jaccard_similarity,0.01).
