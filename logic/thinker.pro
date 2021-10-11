@@ -1,9 +1,9 @@
 %:-set_prolog_flag(stack_limit,34359738368).
 
-param(show_each_nth,10000).
+param(show_each_nth,1000).
 param(max_neighbor_nodes,100).
 param(max_peer_nodes,4).
-param(neighbor_kind,diverse). % any, diverse, none
+param(neighbor_kind,any). % any, diverse, none
 param(depth_for_edges,4).
 param(path_similarity_start,1).
 param(max_termlet_size,4).
@@ -12,18 +12,18 @@ param(test_tags,[te]).
 
 param(similarity,mock_similarity).
 
-a_similarity(S):-member(S,[
-  mock_similarity-0.1,
-  node_jaccard_similarity-0.1,
-  shared_path_similarity-1.0,
-  edge_jaccard_similarity-0.1,
-  forest_path_similarity-1.0,
-  termlet_similarity-1.0
-  ]
-  ).
+is_similarity(mock_similarity,0.0).
+is_similarity(node_jaccard_similarity,0.01).
+is_similarity(shared_path_similarity,1.0).
+is_similarity(edge_jaccard_similarity,0.01).
+is_similarity(forest_path_similarity,1.0).
+is_similarity(termlet_similarity,1.0).
 
-
-similarity(A,B,Sim):-param(similarity,F),call(F,A,B,Sim).
+similarity(A,B,Sim):-
+   param(similarity,F),
+   is_similarity(F,MinVal),
+   call(F,A,B,Sim),
+   Sim>MinVal.
 
 accuracy(Acc):-
    test_size(Total), % total number of test nodes
@@ -100,8 +100,7 @@ similar_to(MyTextTerm, M, Y,Weight):-
      trainer_at(MM,Y,_,_)
    )),
    */
-   similarity(MyTextTerm,ItsTextTerm,Weight),
-   Weight>0.
+   similarity(MyTextTerm,ItsTextTerm,Weight).
 
 keygroups(Ps,KXs):-
    keysort(Ps,Ss),

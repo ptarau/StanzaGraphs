@@ -1,4 +1,4 @@
-mock_similarity(_A,_B,0.1).
+mock_similarity(_A,_B,1).
 
 % similarity based on shared small subtrees "termlets"
 termlet_similarity(A,B,Weight):-
@@ -12,7 +12,6 @@ sharing_count(MaxTS,A,B,Res):-
   Size is 1+Size0,
   Size=<MaxTS,
   occurrences_of_term(T,B,Count),
-
   Count>0,
   Res is Size*Count.
 

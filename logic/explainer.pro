@@ -12,12 +12,14 @@ guess(Kinds):-
   count_nodes(Kinds,Total),
   writeln(starting(Kinds,Total)),nl,
   do((
-    a_similarity(Similarity-_),
+    is_similarity(Similarity,_),
     writeln(testing(Similarity)),
     guess_count(Similarity,Kinds,C),
     Perc is round(10000*C/Total)/100,
     writeln([Similarity,Kinds]:[C/Total=Perc,'%']),nl
   )).
+
+a_similarity(Name-Val):-is_similarity(Name,Val).
 
 guess_count(Similarity,Kinds,C):-
   aggregate_all(count,(member(Kind,Kinds),at(_,Kind,Y,T,_Ns),cat_guess(Similarity,T,_,L),Y=L),C).
