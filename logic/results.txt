@@ -238,3 +238,31 @@ param(similarity, node_jaccard_similarity).
 accuracy=0.6928790403884534
 true.
 
+% 140,511,510,793 inferences, 10715.031 CPU in 10788.414 seconds (99% CPU, 13113496 Lips)
+param(show_each_nth, 100).
+param(max_neighbor_nodes, 100).
+param(max_peer_nodes, 40).
+param(neighbor_kind, none).
+param(depth_for_edges, 4).
+param(path_similarity_start, 1).
+param(max_termlet_size, 4).
+param(train_tags, [tr, va]).
+param(test_tags, [te]).
+param(similarity, node_jaccard_similarity).
+
+accuracy=0.4637779560932453
+
+
+% 31,574,518,473 inferences, 1872.867 CPU in 1874.459 seconds (100% CPU, 16858926 Lips)
+param(show_each_nth, 1000).
+param(max_neighbor_nodes, 100).
+param(max_peer_nodes, 4).
+param(neighbor_kind, any).
+param(depth_for_edges, 4).
+param(path_similarity_start, 1).
+param(max_termlet_size, 4).
+param(train_tags, [tr, va]).
+param(test_tags, [te]).
+param(similarity, shared_path_similarity).
+
+accuracy=0.6745056889492418

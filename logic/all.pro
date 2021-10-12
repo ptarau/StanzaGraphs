@@ -5,9 +5,8 @@ c:-make.
 :-ensure_loaded('sims.pro').
 
 % data
-
 :-ensure_loaded('cs_cats.pro').
 :-ensure_loaded('OUTPUT_DIRECTORY/arxiv_all.pro').
 
-% optional, fo analyzing results
+% optional, for analyzing and explanig the results
 :-ensure_loaded('explainer.pro').

@@ -3,7 +3,7 @@
 param(show_each_nth,100).
 param(max_neighbor_nodes,100).
 param(max_peer_nodes,4).
-param(neighbor_kind,any). % any, diverse, none
+param(neighbor_kind,diverse). % any, diverse, none
 param(depth_for_edges,4).
 param(path_similarity_start,1).
 param(max_termlet_size,4).
