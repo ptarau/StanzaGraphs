@@ -3,13 +3,17 @@ import os
 import pickle
 import subprocess
 from inspect import getframeinfo, stack
+from timeit import default_timer as timer
 
 import langid
 
 PARAMS = dict(
     TRACE=1,
+    SEED=1234,
+    MINSIM=3, # only edges with MINSIM * avg similarity are kept
     TARGET_LANG='en',  # tried zh,fr,sp,de,hu,ro,ar,el,la,it,ru,ja
     RANKER='betweenness',
+    #RANKER='pagerank',
     UPLOAD_DIRECTORY='uploads/',
     OUTPUT_DIRECTORY='out/',
     k_count=7,

@@ -250,7 +250,7 @@ def facts2nx(fgen):
     for f, ff, rel, tt, t, sid in fgen:
         d[(f, t)].append(sid)
     for (f, t), sids in d.items():
-        w = 1 / len(sids)
+        w = 1 / len(sids) # frequently occuring means "closer"
         # ppp('WEIGHT:',f, '->',t,sids)
         g.add_edge(f, t, weight=w)
     return g
@@ -335,14 +335,17 @@ def process_file(fname=None):
 def test(fname='texts/english'):
     # nlp = Summarizer()
     # nlp.from_file(fname)
+    t1=timer()
     nlp = process_file(fname=fname)
     nlp.summarize()
+    t2 = timer()
+    print('PROCESSING TIME:', round(t2 - t1, 4))
 
 
 
 if __name__ == "__main__":
-    test(fname='texts/english')
-    # test(fname='texts/cosmo')
+    #test(fname='texts/english')
+    test(fname='texts/cosmo')
     #test(fname='texts/spanish')
     # test(fname='texts/chinese')
     # test(fname='texts/russian')
