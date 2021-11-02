@@ -33,9 +33,9 @@ class SumarizerWithSims(Summarizer):
                     len_j = len(self.get_sent(j))
                     if len_j<=len_i:
                        g.add_edge(i,j,weight=w)
-                       print('!!!', i, j, w)
+                       #print('!!!', i, j, w)
                     else:
-                       print('!!!', j, i, w)
+                       #print('!!!', j, i, w)
                        g.add_edge(j, i, weight=w)
 
         # alternatives to experiment with:
