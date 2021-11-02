@@ -3,12 +3,14 @@ import math
 from collections import defaultdict
 
 import networkx as nx
+import numpy as np
 import stanza
 
+from logic.visualizer import gshow
 from params import *
 from rankers import ranker_dict
 from translator import translate
-from logic.visualizer import gshow
+from univsims import UnivSims
 
 
 class Summarizer:
@@ -193,7 +195,14 @@ class Summarizer:
         return kwds, sids, sents, picg
 
     def to_nx(self):  # converts to networkx graph
-        return facts2nx(self.facts())
+        g=facts2nx(self.facts())
+        #M=self.to_sims()
+        # add here similarity links
+        """
+           add all similarities
+           add those in close sentences
+        """
+        return g
 
     def to_tsv(self):  # writes out edges to .tsv file
         facts2tsv(self.facts(), self.out + self.fname + ".tsv")
@@ -205,13 +214,25 @@ class Summarizer:
     def get_sent(self, sid):
         return self.doc.sentences[sid].text
 
+    def to_sims(self):
+        sents = [sent for (_,sent) in self.sent_gen()]
+        size = len(sents)
+        B = UnivSims()
+        _, embs = B.digest(sents)
+        M = np.zeros([size, size])
+        for i in range(size):
+            for j in range(size):
+                if i < j:
+                    M[i, j] = B.similarity(embs[i], embs[j])
+        return M
+
+    def sent_gen(self):
+        for sid, sent in enumerate(self.doc.sentences):
+            yield sid, sent.text
+
     # writes out sentences
     def to_sents(self):
-        def sent_gen():
-            for sid, sent in enumerate(self.doc.sentences):
-                yield sid, sent.text
-
-        facts2tsv(sent_gen(), self.out + self.fname + "_sents.tsv")
+        facts2tsv(self.sent_gen(), self.out + self.fname + "_sents.tsv")
 
     def summarize(self):  # extract summary and keywords
         kws, sids, sents, picg = self.info()
@@ -329,9 +350,17 @@ def test(fname='texts/english'):
     nlp.summarize()
 
 
+def simtest(fname='texts/english'):
+    nlp = process_file(fname=fname)
+    M=nlp.to_sims()
+    print(M.shape)
+    print(M)
+
 if __name__ == "__main__":
     test(fname='texts/english')
     # test(fname='texts/cosmo')
-    test(fname='texts/spanish')
+    #test(fname='texts/spanish')
     # test(fname='texts/chinese')
     # test(fname='texts/russian')
+
+    #simtest()
