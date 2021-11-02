@@ -3,7 +3,7 @@ import math
 from collections import defaultdict
 
 import networkx as nx
-import numpy as np
+
 import stanza
 
 from logic.visualizer import gshow
@@ -214,17 +214,6 @@ class Summarizer:
     def get_sent(self, sid):
         return self.doc.sentences[sid].text
 
-    def to_sims(self):
-        sents = [sent for (_,sent) in self.sent_gen()]
-        size = len(sents)
-        B = UnivSims()
-        _, embs = B.digest(sents)
-        M = np.zeros([size, size])
-        for i in range(size):
-            for j in range(size):
-                if i < j:
-                    M[i, j] = B.similarity(embs[i], embs[j])
-        return M
 
     def sent_gen(self):
         for sid, sent in enumerate(self.doc.sentences):
@@ -350,11 +339,6 @@ def test(fname='texts/english'):
     nlp.summarize()
 
 
-def simtest(fname='texts/english'):
-    nlp = process_file(fname=fname)
-    M=nlp.to_sims()
-    print(M.shape)
-    print(M)
 
 if __name__ == "__main__":
     test(fname='texts/english')
@@ -363,4 +347,3 @@ if __name__ == "__main__":
     # test(fname='texts/chinese')
     # test(fname='texts/russian')
 
-    #simtest()
