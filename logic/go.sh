@@ -1,0 +1,1 @@
+swipl -s all.pro

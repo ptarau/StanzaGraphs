@@ -1,15 +1,20 @@
 import csv
 import math
 from collections import defaultdict
+from operator import mod
 
 import networkx as nx
+
 import stanza
 
+from logic.visualizer import gshow
 from params import *
 from rankers import ranker_dict
 from translator import translate
-from visualizer import gshow
+from univsims import UnivSims
 
+import numpy as np
+import matplotlib.pyplot as plt
 
 class Summarizer:
     """
@@ -43,16 +48,16 @@ class Summarizer:
             self.set_language(detected)
 
     # process text from a file
-    def from_file(self, fname=None):
+    def from_file(self, fname=None, detect=True):
         self.fname = fname
         text = file2text(fname + ".txt")
-        self.detect_language(text)
-        self.fact_list=None
+        if self.lang is None and detect: self.detect_language(text)
+        self.fact_list = None
         self.doc = self.nlp(text)
         # print('LANGUAGE:',self.lang)
 
-    def from_text(self, text="Hello!"):
-        self.detect_language(text)
+    def from_text(self, text="Hello!", detect=True):
+        if detect: self.detect_language(text)
         self.fact_list = None
         self.doc = self.nlp(text)
 
@@ -137,7 +142,9 @@ class Summarizer:
                 contexts[w.lemma].append((sid, context))
         return contexts
 
-    def info(self):
+    def info(self, wk=None, sk=None):
+        """extract keywords and summary sentences"""
+
         cname = self.cache_name()
 
         if cname and exists_file(cname):
@@ -145,10 +152,8 @@ class Summarizer:
             sids, sents, kwds = from_json(cname)
             return kwds, sids, sents, None
 
-        wk = PARAMS['k_count']
-        sk = PARAMS['s_count']
-
-        """extract keywords and summary sentences"""
+        if wk is None: wk = PARAMS['k_count']
+        if sk is None: sk = PARAMS['s_count']
 
         ranker = ranker_dict[PARAMS['RANKER']]
         g = self.to_nx()
@@ -189,11 +194,38 @@ class Summarizer:
             print('CACHING TO: ', cname)
             to_json((sids, sents, kwds), cname)
 
-        if PARAMS['CACHING'] : self.to_tsv()
+        if PARAMS['CACHING']: self.to_tsv()
         return kwds, sids, sents, picg
 
     def to_nx(self):  # converts to networkx graph
-        return facts2nx(self.facts())
+        g=facts2nx(self.facts())
+        #M=self.to_sims()
+        # add here similarity links
+        """
+           add all similarities
+           add those in close sentences
+        """
+        return g
+    
+    def to_sims(self, regenerate=False):
+        if not regenerate and hasattr(self, "sent_sim_mat"):
+            return self.sent_sim_mat
+        
+        sentences = [s.text for s in self.doc.sentences]
+        mat = np.empty((len(sentences), len(sentences)))
+        model = UnivSims()
+
+        print("Calculaing similarity matrix...")
+        _, sent_vects = model.digest(sentences)
+        
+        for i, vec1 in enumerate(sent_vects):
+            for j, vec2 in enumerate(sent_vects):
+                mat[i,j] = mat[j,i] = model.similarity(vec1, vec2)
+        
+        print("done")
+
+        self.sent_sim_mat = mat
+        return mat
 
     def to_tsv(self):  # writes out edges to .tsv file
         facts2tsv(self.facts(), self.out + self.fname + ".tsv")
@@ -205,13 +237,14 @@ class Summarizer:
     def get_sent(self, sid):
         return self.doc.sentences[sid].text
 
+
+    def sent_gen(self):
+        for sid, sent in enumerate(self.doc.sentences):
+            yield sid, sent.text
+
     # writes out sentences
     def to_sents(self):
-        def sent_gen():
-            for sid, sent in enumerate(self.doc.sentences):
-                yield sid, sent.text
-
-        facts2tsv(sent_gen(), self.out + self.fname + "_sents.tsv")
+        facts2tsv(self.sent_gen(), self.out + self.fname + "_sents.tsv")
 
     def summarize(self):  # extract summary and keywords
         kws, sids, sents, picg = self.info()
@@ -240,7 +273,7 @@ def facts2nx(fgen):
     for f, ff, rel, tt, t, sid in fgen:
         d[(f, t)].append(sid)
     for (f, t), sids in d.items():
-        w = 1 / len(sids)
+        w = 1 / len(sids) # frequently occuring means "closer"
         # ppp('WEIGHT:',f, '->',t,sids)
         g.add_edge(f, t, weight=w)
     return g
@@ -323,15 +356,33 @@ def process_file(fname=None):
 # TESTS
 
 def test(fname='texts/english'):
-    #nlp = Summarizer()
-    #nlp.from_file(fname)
-    nlp=process_file(fname=fname)
+    # nlp = Summarizer()
+    # nlp.from_file(fname)
+    t1=timer()
+    nlp = process_file(fname=fname)
     nlp.summarize()
+    t2 = timer()
+    print('PROCESSING TIME:', round(t2 - t1, 4))
+
+    plotSentSimilarity(nlp)
+
+def plotSentSimilarity(summarizer):
+    mat = summarizer.to_sims()
+    
+    print("\n\nSentences:")
+    for i, s in enumerate(summarizer.doc.sentences):
+        print("%i: %s" % (i, s.text))
+
+    plt.title("Sentence-Sentence Similarity")
+    plt.imshow(mat)
+    plt.colorbar()
+    plt.show()
 
 
 if __name__ == "__main__":
     test(fname='texts/english')
     # test(fname='texts/cosmo')
-    test(fname='texts/spanish')
+    #test(fname='texts/spanish')
     # test(fname='texts/chinese')
     # test(fname='texts/russian')
+

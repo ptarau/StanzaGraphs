@@ -133,5 +133,6 @@ out/
 pics/
 pdfs/
 uploads/
-
+logic/DATA_CACHE/
+logic/OUTPUT_DIRECTORY/
 

@@ -1,14 +1,19 @@
 import json
 import os
+import pickle
 import subprocess
 from inspect import getframeinfo, stack
+from timeit import default_timer as timer
 
 import langid
 
 PARAMS = dict(
     TRACE=1,
+    SEED=1234,
+    MINSIM=3, # only edges with MINSIM * avg similarity are kept
     TARGET_LANG='en',  # tried zh,fr,sp,de,hu,ro,ar,el,la,it,ru,ja
     RANKER='betweenness',
+    #RANKER='pagerank',
     UPLOAD_DIRECTORY='uploads/',
     OUTPUT_DIRECTORY='out/',
     k_count=7,
@@ -74,6 +79,44 @@ def home_dir():
 def ensure_path(fname):
     folder, _ = os.path.split(fname)
     os.makedirs(folder, exist_ok=True)
+
+
+def to_pickle(obj, fname='./arxiv.pickle'):
+    """
+    serializes an object to a .pickle file
+    """
+    ensure_path(fname)
+    with open(fname, "wb") as outf:
+        pickle.dump(obj, outf)
+
+
+def from_pickle(fname):
+    """
+    deserializes an object from a pickle file
+    """
+    with open(fname, "rb") as inf:
+        return pickle.load(inf)
+
+
+def load_delimited(fname, delimiter):
+    with open(fname, mode="rt") as f:
+        for line in f:
+            xs = line.split(delimiter)
+            last = xs[-1]
+            xs[-1] = last[0:-1]
+            yield xs
+
+def take(n, gen):
+    for i, x in enumerate(gen):
+        if i >= n: break
+        yield x
+
+
+def pp(gen, n=10):
+    if isinstance(gen, dict):
+        gen = gen.items()
+    for x in take(n, gen):
+        print(x)
 
 
 def ppp(*args, **kwargs):

@@ -1,4 +1,5 @@
 import networkx as nx
+from params import *
 
 # alternative centrality algorithms
 
@@ -17,14 +18,9 @@ def pagerank(g) :
   return nx.pagerank(g)
 
 @ranker
-def subg(g) :
-  if g.is_directed(): g=g.to_undirected()
-  return nx.subgraph_centrality(g)
-
-@ranker
 def closeness(g) :
   return nx.closeness_centrality(g,distance="weight")
 
 @ranker
 def betweenness(g) :
-  return nx.betweenness_centrality(g,weight="weight")
+  return nx.betweenness_centrality(g,seed=PARAMS['SEED'],weight="weight")
