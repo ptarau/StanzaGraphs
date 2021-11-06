@@ -1,6 +1,7 @@
 import csv
 import math
 from collections import defaultdict
+from operator import mod
 
 import networkx as nx
 
@@ -12,6 +13,8 @@ from rankers import ranker_dict
 from translator import translate
 from univsims import UnivSims
 
+import numpy as np
+import matplotlib.pyplot as plt
 
 class Summarizer:
     """
@@ -203,6 +206,26 @@ class Summarizer:
            add those in close sentences
         """
         return g
+    
+    def to_sims(self, regenerate=False):
+        if not regenerate and hasattr(self, "sent_sim_mat"):
+            return self.sent_sim_mat
+        
+        sentences = [s.text for s in self.doc.sentences]
+        mat = np.empty((len(sentences), len(sentences)))
+        model = UnivSims()
+
+        print("Calculaing similarity matrix...")
+        _, sent_vects = model.digest(sentences)
+        
+        for i, vec1 in enumerate(sent_vects):
+            for j, vec2 in enumerate(sent_vects):
+                mat[i,j] = mat[j,i] = model.similarity(vec1, vec2)
+        
+        print("done")
+
+        self.sent_sim_mat = mat
+        return mat
 
     def to_tsv(self):  # writes out edges to .tsv file
         facts2tsv(self.facts(), self.out + self.fname + ".tsv")
@@ -341,11 +364,24 @@ def test(fname='texts/english'):
     t2 = timer()
     print('PROCESSING TIME:', round(t2 - t1, 4))
 
+    plotSentSimilarity(nlp)
+
+def plotSentSimilarity(summarizer):
+    mat = summarizer.to_sims()
+    
+    print("\n\nSentences:")
+    for i, s in enumerate(summarizer.doc.sentences):
+        print("%i: %s" % (i, s.text))
+
+    plt.title("Sentence-Sentence Similarity")
+    plt.imshow(mat)
+    plt.colorbar()
+    plt.show()
 
 
 if __name__ == "__main__":
-    #test(fname='texts/english')
-    test(fname='texts/cosmo')
+    test(fname='texts/english')
+    # test(fname='texts/cosmo')
     #test(fname='texts/spanish')
     # test(fname='texts/chinese')
     # test(fname='texts/russian')

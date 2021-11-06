@@ -26,15 +26,13 @@ class UnivSims:
 
 
 def test_univsims():
-    query = ["I had pizza and pasta."]
+    query = ["The color of the sky is blue."]
 
     text = """ 
-    I ate dinner. 
-    We had a three-course meal.
-    Brad came to dinner with us.
-    He loves fish tacos.
-    In the end, we all felt like we ate too much.
-    We all agreed; it was a magnificent evening.
+    I just had breakfest.
+    Clouds are usually white.
+    What is your name?
+    What color is the sky?
     """
 
     B = UnivSims()
