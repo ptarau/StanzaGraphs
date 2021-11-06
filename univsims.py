@@ -32,6 +32,8 @@ def test_univsims():
     I just had breakfest.
     Clouds are usually white.
     What is your name?
+    Is it raining?
+    What color is your hair?
     What color is the sky?
     """
 

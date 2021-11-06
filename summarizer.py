@@ -373,6 +373,12 @@ def plotSentSimilarity(summarizer):
     for i, s in enumerate(summarizer.doc.sentences):
         print("%i: %s" % (i, s.text))
 
+    idx = np.argmax(np.triu(mat, 1)) #returns idx in flattened array
+    i, j = np.unravel_index(idx, mat.shape)
+    print("\nMost similar sentences:")
+    print(summarizer.doc.sentences[i].text)
+    print(summarizer.doc.sentences[j].text)
+
     plt.title("Sentence-Sentence Similarity")
     plt.imshow(mat)
     plt.colorbar()
