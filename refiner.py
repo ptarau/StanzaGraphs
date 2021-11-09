@@ -20,9 +20,9 @@ class SumarizerWithSims(Summarizer):
 
     def to_nx(self):  # converts to networkx graph
         g=super().to_nx()
-        n=PARAMS["MINSIM"]
+        minsim=PARAMS["MINSIM"]
         M=self.to_sims()
-        m=2*n*np.mean(M) # as half are 0
+        m=2*minsim*np.mean(M) # as half are 0
         n=M.shape[1]
         for i in range(n):
             for j in range(i):
@@ -42,8 +42,9 @@ class SumarizerWithSims(Summarizer):
         """
            add edges for all high enough similarities
            the same  but only for close sentences
-           add endges only from longer to shorter sentence  (as is now)
-           add edges only from later to earlier sentence
+           add edges only from longer to shorter sentence  (as is now)
+           add edges only from later to earlier sentences
+           add edges from mor complex to simpler sentence 
         """
         return g
 
