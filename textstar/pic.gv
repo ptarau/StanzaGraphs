@@ -1,0 +1,23 @@
+strict digraph "" {
+	0 -> 16;
+	0 -> hole;
+	hole -> black;
+	black -> paper;
+	black -> question;
+	1 -> 0;
+	mathematical -> hole;
+	Penrose -> 16;
+	Penrose -> 5;
+	paper -> hole;
+	paper -> Penrose;
+	paper -> possible;
+	3;
+	question -> 9;
+	artifact -> mathematical;
+	5 -> Penrose;
+	7 -> nature;
+	nature -> possible;
+	8 -> 7;
+	9 -> nature;
+	9 -> 8;
+}
