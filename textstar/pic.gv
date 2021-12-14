@@ -193,8 +193,7 @@ strict digraph "" {
 	Bang -> Big;
 	Stephen -> Penrose;
 	Hawking -> Stephen;
-	soon -> Hawking;
-	similar -> soon;
+	similar -> Hawking;
 	analysis -> similar;
 	applies -> analysis;
 	entire -> applies;

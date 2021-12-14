@@ -45,7 +45,7 @@ def sents2graph(lss):
     return g
 
 
-def textstar(g, ranker, sumsize, kwsize, trim):
+def textstar(g, ranker, sumsize, kwsize, trim, flip):
     while True:
         gbak = g.copy()
 
@@ -71,6 +71,8 @@ def textstar(g, ranker, sumsize, kwsize, trim):
 
         if s_nodes <= sumsize: break
         if w_nodes <= kwsize: break
+
+        if flip: g = g.reverse()
     return gbak, ranks
 
 
@@ -84,7 +86,7 @@ short_text = """
     """
 
 
-def process_text(text, ranker=nx.betweenness_centrality, sumsize=5, kwsize=7, trim=80):
+def process_text(text, ranker=nx.pagerank, sumsize=6, kwsize=6, trim=80, flip=True):
     lss = text2sents(text)
     print("#SENT:",len(lss))
     # print(lss)
@@ -95,7 +97,7 @@ def process_text(text, ranker=nx.betweenness_centrality, sumsize=5, kwsize=7, tr
         nx.nx_agraph.write_dot(g, 'pic.gv')
 
     # for f,t in g.edges(): print(t,'<-',f)
-    g, ranks = textstar(g, ranker, sumsize, kwsize, trim)
+    g, ranks = textstar(g, ranker, sumsize, kwsize, trim, flip)
     sids = [sid for (sid, _) in ranks if isinstance(sid,int)]
     sids = sids[0:sumsize]
     sids = sorted(sids)
@@ -111,10 +113,13 @@ def process_text(text, ranker=nx.betweenness_centrality, sumsize=5, kwsize=7, tr
     return sents, kwds
 
 
-def test_builder():
+def test_textstar():
     with open('../texts/english.txt', 'r') as f:
         text = f.read()
-    sents, kwds = process_text(text=text,ranker=nx.pagerank)
+    sents, kwds = process_text(
+        text=text,
+        ranker=nx.betweenness_centrality
+    )
     print('SUMMARY:')
     for sent in sents:
         print(*sent)
@@ -124,4 +129,4 @@ def test_builder():
 
 if __name__ == "__main__":
     # print(stopwords())
-    test_builder()
+    test_textstar()
