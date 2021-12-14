@@ -106,7 +106,7 @@ def process_text(text, ranker=nx.betweenness_centrality, sumsize=5, kwsize=7, tr
 
 
 def test_builder():
-    with open('../texts/english.txt', 'r') as f:
+    with open('../texts/cosmo.txt', 'r') as f:
         text = f.read()
     sents, kwds = process_text(text=text,ranker=nx.pagerank)
     print('SUMMARY:')
