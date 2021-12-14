@@ -86,27 +86,33 @@ short_text = """
 
 def process_text(text, ranker=nx.betweenness_centrality, sumsize=5, kwsize=7, trim=80):
     lss = text2sents(text)
-    print(len(lss))
+    print("#SENT:",len(lss))
     # print(lss)
     g = sents2graph(lss)
     print(g)
+
+    if g.number_of_edges() < 600:
+        nx.nx_agraph.write_dot(g, 'pic.gv')
+
     # for f,t in g.edges(): print(t,'<-',f)
     g, ranks = textstar(g, ranker, sumsize, kwsize, trim)
-    sids = sorted([sid for (sid, _) in ranks if isinstance(sid,int)])
+    sids = [sid for (sid, _) in ranks if isinstance(sid,int)]
     sids = sids[0:sumsize]
+    sids = sorted(sids)
+
     print("SIDS:",sids)
     all_sents = [sent for (_, sent) in lss]
     sents = [(i,all_sents[i]) for i in sids]
     kwds = [w for (w,_) in ranks if isinstance(w, str)][0:kwsize]
 
     if g.number_of_edges() < 600:
-        nx.nx_agraph.write_dot(g, 'pic.gv')
+       nx.nx_agraph.write_dot(g, 'final_pic.gv')
 
     return sents, kwds
 
 
 def test_builder():
-    with open('../texts/cosmo.txt', 'r') as f:
+    with open('../texts/english.txt', 'r') as f:
         text = f.read()
     sents, kwds = process_text(text=text,ranker=nx.pagerank)
     print('SUMMARY:')
