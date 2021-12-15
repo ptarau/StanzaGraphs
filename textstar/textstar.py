@@ -51,7 +51,7 @@ def add_compounds(g, sid, ls):
     m = len(ls)
     added = set()
     for i, w in enumerate(ls):
-        if i < m - 2 and w.tag in 'J' and ls[i + 1].tag in 'NJ' and ls[i + 2].tag in 'N':
+        if i < m - 2 and w.tag in 'RJ' and ls[i + 1].tag in 'J' and ls[i + 2].tag in 'N':
             t = " ".join([w.word, ls[i + 1].word, ls[i + 2].word])
             for x in ls[i:i + 3]:
                 f = x.lemma
