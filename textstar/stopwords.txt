@@ -4,6 +4,7 @@ above
 across
 after
 again
+al
 all
 almost
 alone
@@ -74,6 +75,7 @@ ended
 ending
 ends
 enough
+et
 even
 evenly
 ever
@@ -209,6 +211,7 @@ no
 nobody
 non
 noone
+not
 nowhere
 o
 of
@@ -368,3 +371,4 @@ you
 your
 yours
 z
+©
