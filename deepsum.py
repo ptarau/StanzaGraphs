@@ -1,7 +1,6 @@
-import networkx as nx
-
 from params import *
 from summarizer import Summarizer
+from rankers import ranker_dict
 from textstar.textstar import textstar
 
 
@@ -9,10 +8,10 @@ class DeepSum(Summarizer):
 
     def summarize(self):  # extract summary and keywords
         g = super().to_nx()
-        ranker = nx.pagerank
-        sumsize = 5
-        kwsize = 6
-        trim = 80
+        ranker = ranker_dict[PARAMS['RANKER']]
+        sumsize = PARAMS['s_count']
+        kwsize = PARAMS['k_count']
+        trim = PARAMS['trim']
         sids, kwds = textstar(g, ranker, sumsize, kwsize, trim)
         sids.sort()
         sents = map(self.get_sent, sids)

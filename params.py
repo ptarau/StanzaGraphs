@@ -18,6 +18,7 @@ PARAMS = dict(
     OUTPUT_DIRECTORY='out/',
     k_count=7,
     s_count=5,
+    trim=80,
     translation=True,
     pics=False,
     CACHING=0
