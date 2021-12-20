@@ -95,20 +95,6 @@ def textstar(g, ranker, sumsize, kwsize, trim):
         sids = [sid for (sid, _) in ranks if isinstance(sid, int)]
         kwds = [w for (w, _) in ranks if isinstance(w, str)]
 
-        print('=> S_NODES:', len(sids), 'W_NODES', len(kwds))
-
-        total = len(ranks)
-        split = trim * total // 100
-        # print(ranks)
-        weak_nodes = [n for (n, _) in ranks[split:]]
-        weakest = weak_nodes[-1]
-        weakest_rank = unsorted_ranks[weakest]
-        for n in weak_nodes:
-            g.remove_node(n)
-        for n, r in ranks[0:split]:
-            if r <= weakest_rank:
-                g.remove_node(n)
-
         s_done = len(sids) <= sumsize
         w_done = len(kwds) <= kwsize
 
@@ -118,6 +104,22 @@ def textstar(g, ranker, sumsize, kwsize, trim):
             final_kwds = kwds
 
         if s_done and w_done: break
+
+        print('=> S_NODES:', len(sids), 'W_NODES', len(kwds))
+
+        total = len(ranks)
+        split = trim * total // 100
+        # print(ranks)
+        weak_nodes = [n for (n, _) in ranks[split:]]
+
+        if weak_nodes:
+            weakest = weak_nodes[-1]
+            weakest_rank = unsorted_ranks[weakest]
+            for n in weak_nodes:
+                g.remove_node(n)
+            for n, r in ranks[0:split]:
+                if r <= weakest_rank:
+                    g.remove_node(n)
 
     return final_sids, final_kwds
 
