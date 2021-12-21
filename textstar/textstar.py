@@ -52,7 +52,8 @@ def add_compounds(g, sid, ls):
     added = set()
     for i, w in enumerate(ls):
         if i < m - 2 and w.tag in 'RJ' and ls[i + 1].tag in 'J' and ls[i + 2].tag in 'N':
-            t = " ".join([w.word, ls[i + 1].word, ls[i + 2].word])
+            #t = " ".join([w.word, ls[i + 1].word, ls[i + 2].word])
+            t = (w.word, ls[i + 1].word, ls[i + 2].word)
             for x in ls[i:i + 3]:
                 f = x.lemma
                 g.add_edge(f, t)
@@ -64,7 +65,8 @@ def add_compounds(g, sid, ls):
             w.tag in 'NJ' and ls[i + 1].tag in 'N':
             for x in ls[i:i + 2]:
                 f = x.lemma
-                t = " ".join([w.word, ls[i + 1].word])
+                #t = " ".join([w.word, ls[i + 1].word])
+                t=(w.word, ls[i + 1].word)
                 g.add_edge(f, t)
                 g.add_edge(sid, t)
 
@@ -87,13 +89,19 @@ def sents2graph(lss):
 def textstar(g, ranker, sumsize, kwsize, trim):
     assert sumsize > 0 or kwsize > 0
     final_sids, final_kwds = None, None
+    first_ranks=None
+
     while True:
 
         unsorted_ranks = ranker(g)
         ranks = sorted(unsorted_ranks.items(), reverse=True, key=lambda x: x[1])
 
+        if first_ranks is None : first_ranks=ranks
+
         sids = [sid for (sid, _) in ranks if isinstance(sid, int)]
-        kwds = [w for (w, _) in ranks if isinstance(w, str)]
+        kwds = [w for (w, _) in ranks if not isinstance(w, int)]
+
+        # trim kwds occurrring in compound others
 
         s_done = len(sids) <= sumsize
         w_done = len(kwds) <= kwsize
@@ -121,10 +129,10 @@ def textstar(g, ranker, sumsize, kwsize, trim):
                 if r <= weakest_rank:
                     g.remove_node(n)
 
-    return final_sids, final_kwds
+    return final_sids, final_kwds, first_ranks
 
 
-def process_text(text, ranker=nx.pagerank, sumsize=6, kwsize=6, trim=80, show=False):
+def process_text(text, ranker, sumsize, kwsize, trim, show):
     lss = text2sents(text)
     print("#SENT:", len(lss))
 
@@ -135,7 +143,7 @@ def process_text(text, ranker=nx.pagerank, sumsize=6, kwsize=6, trim=80, show=Fa
         nx.nx_agraph.write_dot(g, 'pic.gv')
 
     # for f,t in g.edges(): print(t,'<-',f)
-    final_sids, final_kwds = textstar(g, ranker, sumsize, kwsize, trim)
+    final_sids, final_kwds,_ = textstar(g, ranker, sumsize, kwsize, trim)
 
     sids = final_sids[0:sumsize]
     sids = sorted(sids)
@@ -143,31 +151,44 @@ def process_text(text, ranker=nx.pagerank, sumsize=6, kwsize=6, trim=80, show=Fa
     all_sents = [sent for (_, sent) in lss]
     sents = [(i, all_sents[i]) for i in sids]
 
-    kwds = final_kwds[0:kwsize]
+    kwds = final_kwds[0:2*kwsize]
 
-    return sents, kwds
+    clean_kwds=[]
+    for i,u in enumerate(kwds):
+        if isinstance(u,str):
+           redundant=False
+           for j in range(0,kwsize):
+              v = kwds[j]
+              if isinstance(v,tuple) and u in v:
+                  redundant=True
+                  break
+           if not redundant : clean_kwds.append(u)
+        else:
+            clean_kwds.append(" ".join(u))
+
+    return sents, clean_kwds[0:kwsize]
 
 
-def summarize(fname, ranker=nx.pagerank, show=False):
+def summarize(fname, ranker=nx.pagerank, sumsize=6, kwsize=6, trim=80, show=False):
+
     with open(fname + ".txt", 'r') as f:
         text = f.read()
-    sents, kwds = process_text(
-        text=text,
-        ranker=ranker,
-        show=show)
+    sents, kwds = process_text(text, ranker, sumsize, kwsize, trim, show)
     return sents, kwds
 
 
-def test_textstar():
-    sents, kwds = summarize('../texts/english', show=True)
+def test_textstar(name):
+    #sents, kwds = summarize('../texts/english', show=True)
+    sents, kwds = summarize(name, show=True)
 
     print('SUMMARY:')
     for sent in sents:
         print(*sent)
     print('\nKEYWORDS:')
-    print("; ".join(kwds) + ".")
+    #print("; ".join(kwds) + ".")
+    print(kwds)
 
 
 if __name__ == "__main__":
-    # print(stopwords())
-    test_textstar()
+    test_textstar('../texts/english')
+    test_textstar('../texts/cosmo')

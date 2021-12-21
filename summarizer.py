@@ -3,14 +3,12 @@ import math
 from collections import defaultdict
 
 import networkx as nx
-
 import stanza
 
 from logic.visualizer import gshow
 from params import *
 from rankers import ranker_dict
 from translator import translate
-from univsims import UnivSims
 
 
 class Summarizer:
@@ -120,7 +118,7 @@ class Summarizer:
         returns contexts in which nouns and adjectives
         occur as constiguous lemmas as part of a phrase
         """
-        contexts = defaultdict(list)
+        contexts = defaultdict(set)
         for sid, sent in enumerate(self.doc.sentences):
             ws = list(sent.words)
             good = ('NOUN', 'ADJ')
@@ -136,14 +134,35 @@ class Summarizer:
                     context.append(next_w.lemma)
                 if len(context) < 2: continue
                 # phrase=" ".join(context)
-                contexts[w.lemma].append((sid, context))
+                contexts[w.lemma].add((sid, tuple(context)))
+        # print('!!!!!',contexts)
         return contexts
+
+    def extend_kwds(self, kwds, ranks):
+        def rank_phrase(pair):
+            sid, ws = pair
+            if sid not in ranks: return 0, ws
+            r = sum(ranks[x] for x in ws if x in ranks)
+            r = r * (ranks[sid] / (1 + math.log(1 + len(ws))))
+            # r=ranks[sid]
+            return (r, ws)
+
+        def extend_kwd(w):
+
+            cs = contexts[w]
+            if not cs: return w
+            rs = map(rank_phrase, cs)
+            rs = sorted(rs, reverse=True, key=lambda x: x[0])
+            phrase = " ".join(rs[0][1])
+            return phrase
+
+        contexts = self.context_dict()
+        kwds = dict((extend_kwd(kwd),1) for kwd in kwds)
+        return kwds.keys()
 
     def info(self, wk=None, sk=None):
         """extract keywords and summary sentences"""
-
         cname = self.cache_name()
-
         if cname and exists_file(cname):
             print('FROM CACHED: ', cname)
             sids, sents, kwds = from_json(cname)
@@ -155,35 +174,13 @@ class Summarizer:
         ranker = ranker_dict[PARAMS['RANKER']]
         g = self.to_nx()
         ranks = ranker(g)
-
-        # print('@@@@@',ranks)
-
-        def rank_phrase(pair):
-            sid, ws = pair
-            if sid not in ranks: return 0, ws
-            r = sum(ranks[x] for x in ws if x in ranks)
-            r = r * (ranks[sid] / (1 + math.log(1 + len(ws))))
-            # r=ranks[sid]
-            return (r, ws)
-
-        def extend_kwd(w):
-            cs = contexts[w]
-            if not cs: return w
-            rs = map(rank_phrase, cs)
-            rs = sorted(rs, reverse=True, key=lambda x: x[0])
-            phrase = " ".join(rs[0][1])
-            return phrase
-
         ns = self.keynouns()
-        contexts = self.context_dict()
-
         kwds, sids, picg = ranks2info(g, ranks, self.doc.sentences, ns, wk, sk, self.lang)
-        kwds = map(extend_kwd, kwds)
+        kwds = self.extend_kwds(kwds, ranks)
         kwds = dict((k, 1) for k in kwds)  # remove duplicates, keep order
         kwds = [translate(w, source_lang=self.lang) for w in kwds]
 
         sids = sorted(sids)
-
         sents = map(self.get_sent, sids)
         sents = [translate(s, source_lang=self.lang) for s in sents]
 
@@ -195,8 +192,8 @@ class Summarizer:
         return kwds, sids, sents, picg
 
     def to_nx(self):  # converts to networkx graph
-        g=facts2nx(self.facts())
-        #M=self.to_sims()
+        g = facts2nx(self.facts())
+        # M=self.to_sims()
         # add here similarity links
         """
            add all similarities
@@ -213,7 +210,6 @@ class Summarizer:
 
     def get_sent(self, sid):
         return self.doc.sentences[sid].text
-
 
     def sent_gen(self):
         for sid, sent in enumerate(self.doc.sentences):
@@ -250,7 +246,7 @@ def facts2nx(fgen):
     for f, ff, rel, tt, t, sid in fgen:
         d[(f, t)].append(sid)
     for (f, t), sids in d.items():
-        w = 1 / len(sids) # frequently occuring means "closer"
+        w = 1 / len(sids)  # frequently occuring means "closer"
         # ppp('WEIGHT:',f, '->',t,sids)
         g.add_edge(f, t, weight=w)
     return g
@@ -335,18 +331,16 @@ def process_file(fname=None):
 def test(fname='texts/english'):
     # nlp = Summarizer()
     # nlp.from_file(fname)
-    t1=timer()
+    t1 = timer()
     nlp = process_file(fname=fname)
     nlp.summarize()
     t2 = timer()
     print('PROCESSING TIME:', round(t2 - t1, 4))
 
 
-
 if __name__ == "__main__":
-    #test(fname='texts/english')
+    test(fname='texts/english')
     test(fname='texts/cosmo')
-    #test(fname='texts/spanish')
+    # test(fname='texts/spanish')
     # test(fname='texts/chinese')
     # test(fname='texts/russian')
-

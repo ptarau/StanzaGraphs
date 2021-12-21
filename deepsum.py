@@ -12,8 +12,9 @@ class DeepSum(Summarizer):
         sumsize = PARAMS['s_count']
         kwsize = PARAMS['k_count']
         trim = PARAMS['trim']
-        sids, kwds = textstar(g, ranker, sumsize, kwsize, trim)
+        sids, kwds, first_ranks = textstar(g, ranker, sumsize, kwsize, trim)
         sids.sort()
+        kwds=self.extend_kwds(kwds,dict(first_ranks))
         sents = map(self.get_sent, sids)
         print("\nSUMMARY:")
         for sid, sent in zip(sids, sents): print(sent, '-> [', sid, ']')
@@ -42,3 +43,4 @@ def sumtest(fname='texts/english'):
 if __name__ == "__main__":
     # simtest()
     sumtest(fname='texts/english')
+    sumtest(fname='texts/cosmo')
