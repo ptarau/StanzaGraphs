@@ -197,7 +197,7 @@ if __name__ == "__main__":
         # pdfs = "biblion/"
         # rootdir="/Users/tarau/Desktop/paps/",
         rootdir="/Users/tarau/Desktop/paps/",
-        pdfs="hyperbolics/"
+        pdfs="logic/"
         # rootdir = "/Users/tarau/Desktop/sit/MISC/",
         # pdfs="sienna2021/"
 
