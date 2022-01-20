@@ -11,6 +11,35 @@ from rankers import ranker_dict
 from translator import translate
 
 
+from nltk.tokenize import sent_tokenize, word_tokenize
+
+class NLP(stanza.Pipeline):
+    def __call__(self, text):
+        print('!!! GOT', len(text))
+        text=clean_text(text)
+        doc = super().__call__(text)
+        return doc
+
+def clean_text(data):
+    texts = sent_tokenize(data)
+    clean = []
+    for text in texts:
+        ws = word_tokenize(text)
+        good = 0
+        bad = 0
+        if len(ws) > 256: continue
+        for w in ws:
+            if w.isalpha() and len(w) > 1:
+                good += 1
+            else:
+                bad += 1
+        if good / (1 + bad + good) < 0.75: continue
+        if ws[-1] not in ".?!": ws.append(".")
+        sent = " ".join(ws)
+        clean.append(sent)
+    new_data = "\n".join(clean)
+    return new_data
+
 class Summarizer:
     """
     Stanza-based multi-lingual NLP processor
@@ -35,7 +64,7 @@ class Summarizer:
         if not exists_file(home_dir() + '/stanza_resources/' + lang):
             stanza.download(lang)
 
-        self.nlp = stanza.Pipeline(lang=lang, logging_level='ERROR')
+        self.nlp = NLP(lang=lang, logging_level='ERROR')
 
     def detect_language(self, text):
         detected = detect_lang(text)
@@ -157,7 +186,7 @@ class Summarizer:
             return phrase
 
         contexts = self.context_dict()
-        kwds = dict((extend_kwd(kwd),1) for kwd in kwds)
+        kwds = dict((extend_kwd(kwd), 1) for kwd in kwds)
         return kwds.keys()
 
     def info(self, wk=None, sk=None):

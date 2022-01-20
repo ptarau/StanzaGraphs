@@ -13,6 +13,18 @@ def stopwords():
         return set(l[:-1] for l in f.readlines())
 
 
+def good_sent(ws):
+    good = 0
+    bad = 0
+    if len(ws) > 256: return False
+    for w in ws:
+        if w.isalpha() and len(w) > 1:
+            good += 1
+        else:
+            bad += 1
+    if good / (1 + bad + good) < 0.75: return False
+    return True
+
 def text2sents(text):
     lemmatizer = WordNetLemmatizer()
     stops = stopwords()
@@ -20,6 +32,9 @@ def text2sents(text):
     lss = []
     for sent in sents:
         ws = word_tokenize(sent)
+        if not good_sent(ws):
+            continue
+
         wts = pos_tag(ws)
 
         ls = []
