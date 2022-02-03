@@ -10,7 +10,7 @@ st.set_page_config(layout="wide")
 
 st.title('StanzaGraph: Multilingual Summary and Keyword Extractor and Question-Answering System')
 
-left, right = st.beta_columns((1, 1))
+left, right = st.columns((1, 1))
 
 uploaded_file = st.sidebar.file_uploader('Select a File', type=['txt', 'pdf'])
 

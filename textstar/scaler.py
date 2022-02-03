@@ -133,6 +133,8 @@ def summarize_one(pdf, trim, texts, sums, keys, lang):
         return None
     except RuntimeError:
         return None
+    except:
+        return None
 
 
 def summarize_all(
@@ -196,8 +198,8 @@ if __name__ == "__main__":
         # rootdir = "/Users/tarau/Desktop/sit/GRAPHSTAX/",
         # pdfs = "biblion/"
         # rootdir="/Users/tarau/Desktop/paps/",
-        rootdir="/Users/tarau/Desktop/paps/",
-        pdfs="logic/"
+        rootdir="/Users/tarau/Desktop/",
+        pdfs="paps/"
         # rootdir = "/Users/tarau/Desktop/sit/MISC/",
         # pdfs="sienna2021/"
 
