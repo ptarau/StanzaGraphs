@@ -2,14 +2,45 @@
 from nltk.tokenize import sent_tokenize, word_tokenize
 from nltk.stem import WordNetLemmatizer
 from nltk import pos_tag
+#import graphviz
+
+import os
+import openai
+#POST https://api.openai.com/v1/engines/{text-davinci-002}/edits
+#Authorization: Bearer YOUR_API_KEY
+
+openai.api_key_path = "textstar/.env"
+#openai.api_key = os.getenv("OPENAI_API_KEY")
+
+'''
+openai_object = openai.Engine.list()
+#print(openai_object)
+
+openai_object = openai.Completion.create(
+  engine="text-babbage-001",
+  prompt="Say this is a test",
+  max_tokens=5
+)
+
+'''
+openai_object = openai.Edit.create(
+  engine="text-davinci-edit-001",
+  input=" -LRB- CNN -RRB- -- The 54 men and 14 boys rescued after being found chained this week at an Islamic religious school in Pakistan have been reunited with their families or placed in shelters , authorities said . The group was discovered in an underground room with heavy chains linking them together . Officials said the facility was part madrassa and part drug-rehab facility , and the captives were chained at night apparently to prevent their escape . The operation was successful , and we plan on continuing our work to ensure that places like this are shut down , ' Marwat said . Many of the captives told police their families sent them there because they were recovering drug addicts .     But the future of the rescued children was unclear .",
+  instruction="Simplification"
+)
+
+print(openai_object)
 
 import networkx as nx
+import json
+
+import pygraphviz
 
 
-# import pygraphviz
+
 
 def stopwords():
-    with open('stopwords.txt', 'r') as f:
+    with open('textstar/stopwords.txt', 'r') as f:
         return set(l[:-1] for l in f.readlines())
 
 
@@ -147,6 +178,7 @@ def textstar(g, ranker, sumsize, kwsize, trim):
     return final_sids, final_kwds, first_ranks
 
 
+
 def process_text(text, ranker, sumsize, kwsize, trim, show):
     lss = text2sents(text)
     print("#SENT:", len(lss))
@@ -156,6 +188,7 @@ def process_text(text, ranker, sumsize, kwsize, trim, show):
 
     if show and g.number_of_edges() < 600:
         nx.nx_agraph.write_dot(g, 'pic.gv')
+
 
     # for f,t in g.edges(): print(t,'<-',f)
     final_sids, final_kwds,_ = textstar(g, ranker, sumsize, kwsize, trim)
@@ -184,11 +217,12 @@ def process_text(text, ranker, sumsize, kwsize, trim, show):
     return sents, clean_kwds[0:kwsize]
 
 
-def summarize(fname, ranker=nx.pagerank, sumsize=6, kwsize=6, trim=80, show=False):
+def summarize(fname, ranker=nx.pagerank, sumsize=6, kwsize=6, trim=80, show=True):
 
     with open(fname + ".txt", 'r') as f:
         text = f.read()
     sents, kwds = process_text(text, ranker, sumsize, kwsize, trim, show)
+
     return sents, kwds
 
 
@@ -205,5 +239,6 @@ def test_textstar(name):
 
 
 if __name__ == "__main__":
-    test_textstar('../texts/english')
-    test_textstar('../texts/cosmo')
+    test_textstar('dataset/cnn_big/docsutf8/00a2aef1e18d125960da51e167a3d22ed8416c09')
+    #test_textstar('dataset/cosmo')
+    
