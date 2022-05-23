@@ -88,7 +88,7 @@ def add_compounds(g, sid, ls):
 
 def sents2graph(lss):
     g = nx.DiGraph()
-    g.add_edge(0, len(lss) - 1)  # first ot last sent
+    g.add_edge(0, len(lss) - 1)  # first to last sent
     for sent_id, (ls, _) in enumerate(lss):
         if sent_id > 0:  # from sent to sent before it
             g.add_edge(sent_id, sent_id - 1)
