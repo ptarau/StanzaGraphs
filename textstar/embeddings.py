@@ -2,11 +2,13 @@
 
 import os
 import pickle
+#import networkx as nx
 
 import sentence_transformers as st
-from textstar import *
+from sklearn.neighbors import NearestNeighbors
+import pygraphviz as pg
 
-# import pandas as pd
+from textstar import *
 
 
 def exists_file(fname):
@@ -54,18 +56,38 @@ class SequenceEncoder():
         to_pickle(x, cache)
         return x
 
+
 def test_embeddings(fname='../texts/english'):
     with open(fname + ".txt", 'r') as f:
         text = f.read()
-    lss=text2sents(text)
+    lss = text2sents(text)
 
-    sents=[ls[1] for ls in lss]
+    sents = [ls[1] for ls in lss]
 
-    enc=SequenceEncoder()
+    enc = SequenceEncoder()
 
     print(sents[0])
-    vects=enc(sents,'../out/cache.pickle')
-    print(vects[0])
+    vects = enc(sents, 'out/cache.pickle')
+
+    nbrs = NearestNeighbors(n_neighbors=3, algorithm='ball_tree').fit(vects)
+    distances, indices = nbrs.kneighbors(vects)
+    m = nbrs.kneighbors_graph(vects, n_neighbors=3, mode="distance")
+
+    print(distances, '\n', indices)
+
+    g = nx.from_scipy_sparse_matrix(m)
+    for n,s in enumerate(sents):
+        print(n,s)
+        g.nodes[n]['sent']=s
+
+    print(g.number_of_edges())
+
+    a=nx.nx_agraph.to_agraph(g)
+    a.draw("emb.pdf",prog='dot')
+
+    d=nx.to_dict_of_dicts(g)
+    print(d)
+
 
 
 test_embeddings()

@@ -14,6 +14,9 @@ from translator import translate
 from nltk.tokenize import sent_tokenize, word_tokenize
 
 class NLP(stanza.Pipeline):
+    def __init__(self,processors='tokenize,lemma,pos,depparse',**kwargs):
+        super().__init__(**kwargs)
+
     def __call__(self, text):
         print('!!! GOT', len(text))
         text=clean_text(text)
