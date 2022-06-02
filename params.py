@@ -58,6 +58,12 @@ def to_json(obj, fname, indent=1):
         json.dump(obj, outf, indent=indent, ensure_ascii=False)
 
 
+# read a file into a string text
+def file2text(fname):
+    with open(fname, 'r') as f:
+        return f.read()
+
+
 def from_json(fname):
     """
     deserializes an object from a json file

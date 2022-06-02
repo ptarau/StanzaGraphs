@@ -3,6 +3,7 @@ import math
 from collections import defaultdict
 
 import networkx as nx
+from nltk.tokenize import sent_tokenize, word_tokenize
 import stanza
 
 from logic.visualizer import gshow
@@ -11,7 +12,7 @@ from rankers import ranker_dict
 from translator import translate
 
 
-from nltk.tokenize import sent_tokenize, word_tokenize
+
 
 class NLP(stanza.Pipeline):
     def __init__(self,processors='tokenize,lemma,pos,depparse',**kwargs):
@@ -259,13 +260,6 @@ class Summarizer:
         for w in kws: print(w, end='; ')
         print("\n")
         if picg: gshow(picg, file_name='pics/' + self.fname + '.gv')
-
-
-# read a file into a string text
-def file2text(fname):
-    with open(fname, 'r') as f:
-        return f.read()
-
 
 def facts2nx(fgen):
     """
