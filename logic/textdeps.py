@@ -218,7 +218,7 @@ for type inference in Functional Programming.
     tm.to_prolog()
     # g = g.reverse(copy=False)
     tm.gshow(as_tree=True)
-    #tm.gshow(as_tree=False)
+    # tm.gshow(as_tree=False)
 
     d = nx.pagerank(g)
     m = sorted(d.items(), reverse=True, key=lambda x: x[1])

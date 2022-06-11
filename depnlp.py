@@ -2,8 +2,10 @@ import stanza
 from collections import defaultdict
 from zss import simple_distance, Node
 from nltk.tokenize import word_tokenize
+from collections import Counter
 
 from params import *
+
 
 class DepBuilder:
     def __init__(self, lang='en', source='text'):
@@ -115,10 +117,34 @@ class DepBuilder:
             root = 'sent_', sid
             yield to_term(root)
 
+    def to_repr(self):
+        def quote(s):
+            s=str(s)
+            if s and s[0].isupper() or s[0]=="_":
+                s="'"+s+"'"
+            return s
+
+        def to_term(parent):
+            if parent not in clause:
+                return quote(parent[0])
+
+            children = clause[parent]
+            fun=quote(parent[0])+"("
+            res=[]
+            for child in children:
+                res.append(to_term(child))
+            s=",".join(res)
+            return fun+s+")"
+
+        for sid, clause in enumerate(self.clauses):
+            root = 'sent_', sid
+            yield to_term(root)
+
     def to_prolog(self, pfile):
         with open(pfile, 'w') as f:
-            for t in self.to_terms():
-                print('term(', t, file=f, end=').\n')
+            for t in self.to_repr():
+                #print('term(', t, file=f, end=').\n')
+                print("term("+t+").",file=f)
 
     def to_natprog(self):
         wss = []
@@ -139,6 +165,59 @@ class DepBuilder:
         return wss
 
 
+def below(t):
+    if not isinstance(t, list):
+        return 1, t
+
+    f = t[0]
+    ts = t[1:]
+    xs = [below(x) for x in ts]
+    w = 1 + sum(wx for (wx, _) in xs)
+    return w, [f] + xs
+
+
+def betrank(t):
+    bt = below(t)
+    s, _ = bt
+
+    ranks = Counter()
+
+    def comp(ws):
+        s = 0
+        for i, wi in enumerate(ws):
+            for j, wj in enumerate(ws):
+                if i < j:
+                    s += wi * wj
+        return s
+
+    def walk(t):
+        w, fxs = t
+        if not isinstance(fxs, list):
+            leaf = 0, w, fxs
+            ranks[fxs] += 0
+            return leaf
+        f = fxs[0]
+        xs = fxs[1:]
+        upper = s - w
+        lowers = [walk(x) for x in xs]
+        ws = [l for (_, l, _) in lowers]
+        ws.append(upper)
+        c = comp(ws)
+        r = c, w, [f] + lowers
+        ranks[f] += c
+        return r
+
+    return ranks, walk(bt)
+
+
+def showranks(rs):
+    print('RANKS:')
+    for k, w in rs.most_common():
+        if w == 0: break
+        print(k, w)
+    print()
+
+
 def test_nlp(from_sents=True):
     if not from_sents:
 
@@ -156,6 +235,7 @@ def test_nlp(from_sents=True):
             "The cat sits on the mat.",
             "A feline sits on a surface.",
             "The bear sits on the grass.",
+            "The penguin Tweety walks on the snow."
         ]
 
         db = DepBuilder(source='sentences')
@@ -177,6 +257,19 @@ def test_nlp(from_sents=True):
             print('DIST:', [i, j], simple_distance(x, y))
 
     db.to_prolog('out/temp.pro')
+
+    for x in db.to_terms():
+        b = below(x)
+        print('\nBELOW:', b)
+        rs, _ = betrank(x)
+        print('\nBETRANK:')
+        showranks(rs)
+    print('')
+
+    t = ['a', ['b', ['c', ['d', 'e']], 'f'], 'g', 'h']
+    print('\nBELOW AGAIN:\n', t, '\n', below(t))
+    rs, _ = betrank(t)
+    showranks(rs)
 
 
 if __name__ == "__main__":
