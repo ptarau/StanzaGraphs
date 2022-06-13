@@ -10,10 +10,11 @@ import networkx as nx
 
 def stopwords():
     with open('stopwords.txt', 'r') as f:
-        return set(l[:-1] for l in f.readlines())
+        return set(line[:-1] for line in f.readlines())
 
 
 def good_sent(ws):
+    # print('>>>', ws)
     good = 0
     bad = 0
     if len(ws) > 256: return False
@@ -62,31 +63,6 @@ class W:
         return f"W('{self.lemma}','{self.word}','{self.tag}')"
 
 
-def add_compounds(g, sid, ls):
-    cs = 0
-    m = len(ls)
-    added = set()
-    for i, w in enumerate(ls):
-        if i < m - 2 and w.tag in 'RJ' and ls[i + 1].tag in 'J' and ls[i + 2].tag in 'N':
-            # t = " ".join([w.word, ls[i + 1].word, ls[i + 2].word])
-            t = (w.word, ls[i + 1].word, ls[i + 2].word)
-            for x in ls[i:i + 3]:
-                f = x.lemma
-                g.add_edge(f, t)
-                added.add(i)
-                added.add(i + 1)
-                added.add(i + 2)
-                g.add_edge(sid, t)
-        elif i < m - 1 and i not in added and (i + 1) not in added and \
-            w.tag in 'NJ' and ls[i + 1].tag in 'N':
-            for x in ls[i:i + 2]:
-                f = x.lemma
-                # t = " ".join([w.word, ls[i + 1].word])
-                t = (w.word, ls[i + 1].word)
-                g.add_edge(f, t)
-                g.add_edge(sid, t)
-
-
 def sents2graph(lss):
     g = nx.DiGraph()
     g.add_edge(0, len(lss) - 1)  # first to last sent
@@ -98,7 +74,6 @@ def sents2graph(lss):
         # g.add_edge(ls[0], ls[-1]) # from first word to last word
         for j, w in enumerate(ls):
             if j > 0: g.add_edge(w.lemma, ls[j - 1].lemma)
-        add_compounds(g, sent_id, ls)
     return g
 
 
@@ -116,8 +91,6 @@ def textstar(g, ranker, sumsize, kwsize, trim):
 
         sids = [sid for (sid, _) in ranks if isinstance(sid, int)]
         kwds = [w for (w, _) in ranks if not isinstance(w, int)]
-
-        # trim kwds occurrring in compound others
 
         s_done = len(sids) <= sumsize
         w_done = len(kwds) <= kwsize
@@ -152,16 +125,19 @@ def process_text(text, ranker, sumsize, kwsize, trim, show):
     lss = text2sents(text)
     print("#SENT:", len(lss))
 
-    g = sents2graph(lss)
-    print(g)
+    g0 = sents2graph(lss)
+    print('GRAPH:', g0)
+    g=g0.copy()
 
     if show and g.number_of_edges() < 600:
         print('::::', g.number_of_nodes())
         nx.nx_agraph.write_dot(g, 'text.gv')
 
+    all_sents = [sent for (_, sent) in lss]
+
     if len(lss) < min(sumsize, kwsize):
-        print('text to small to summarize', text)
-        return [], []
+        print('text too small to summarize', text)
+        return [], [], g, all_sents
 
     # for f,t in g.edges(): print(t,'<-',f)
     final_sids, final_kwds, _ = textstar(g, ranker, sumsize, kwsize, trim)
@@ -169,7 +145,7 @@ def process_text(text, ranker, sumsize, kwsize, trim, show):
     sids = final_sids[0:sumsize]
     sids = sorted(sids)
     print("SIDS:", sids)
-    all_sents = [sent for (_, sent) in lss]
+
     sents = [(i, all_sents[i]) for i in sids]
 
     kwds = final_kwds[0:2 * kwsize]
@@ -186,8 +162,7 @@ def process_text(text, ranker, sumsize, kwsize, trim, show):
             if not redundant: clean_kwds.append(u)
         else:
             clean_kwds.append(" ".join(u))
-
-    return sents, clean_kwds[0:kwsize]
+    return sents, clean_kwds[0:kwsize], g0, all_sents
 
 
 def summarize(fname, ranker=nx.pagerank, sumsize=6, kwsize=6, trim=80, show=False):
@@ -197,9 +172,66 @@ def summarize(fname, ranker=nx.pagerank, sumsize=6, kwsize=6, trim=80, show=Fals
     return process_text(text, ranker, sumsize, kwsize, trim, show)
 
 
-def test_textstar(name):
-    # sents, kwds = summarize('../texts/english', show=True)
-    sents, kwds = summarize(name, show=True)
+# for x in kslide(list(range(6))): print(x)
+def kslide(ws):
+    ws_ws = ws + ws
+    for k in range(len(ws), 0, -1):
+        for i in range(len(ws)):
+            yield ws_ws[i:i + k]
+
+
+def query(all_sents, g, text):
+    def sent_id(w):
+        lim = g.number_of_nodes()
+        ns = set(g.successors(w))
+        for _ in range(lim):
+            found = False
+            for r in ns:
+                if isinstance(r, int):
+                    found = True
+                    yield r
+            if found: return
+            ms = set()
+            for n in ns:
+                xs = set(g.successors(n))
+                ms = ms.union(xs)
+            ns = ns.union(ms)
+
+    def walk(ns):
+        #print('!!!!',ns)
+        rs = []
+        for i, n in enumerate(ns):
+            f = ns[i]
+
+            if f not in g.nodes: break
+            #print('there',rs)
+            rs.append(f)
+            xs = g.successors(f)
+            if not xs: break
+            if i + 1 > len(ns) - 1: break
+            t = ns[i + 1]
+            if t not in xs: return
+        if rs:
+            last = rs[-1]
+
+            yield rs, list(sent_id(last))
+
+    lss = text2sents(text)
+    ls = lss[0][0]
+    ws = [w.lemma for w in ls]
+
+    ws.reverse()
+    print('WORDS:', ws)
+
+    for ns in kslide(ws):
+        for rs, sids in walk(ns):
+            for sid in sids:
+                yield all_sents[sid]
+            return
+
+
+def run_textstar(name, q=None):
+    sents, kwds, g, all_sents = summarize(name, show=True)
 
     print('SUMMARY:')
     for sent in sents:
@@ -207,9 +239,27 @@ def test_textstar(name):
     print('\nKEYWORDS:')
     # print("; ".join(kwds) + ".")
     print(kwds)
+    print()
+    read=False
+    if q is None:
+        q = input('Query: ')
+        read=True
+    if q:
+        if not read: print('Query: ', q)
+        found=False
+        for a in query(all_sents, g, q):
+            found=True
+            print('ANSWER:',a)
+            print('')
+        if not found:
+           print('ANSWER: ','I do not know.')
+           print('')
+
+def test_texstar():
+    run_textstar('../texts/small', q='What happened in a restaurant?')
+    run_textstar('../texts/english', q='What did the Nobel committee do?')
+    run_textstar('../texts/cosmo',q="What's new about gravity?")
 
 
 if __name__ == "__main__":
-    test_textstar('../texts/small')
-    test_textstar('../texts/english')
-    test_textstar('../texts/cosmo')
+    test_texstar()
