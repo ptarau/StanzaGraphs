@@ -258,7 +258,7 @@ def run_textstar(name, q=None):
 def test_texstar():
     run_textstar('../texts/small', q='What happened in a restaurant?')
     run_textstar('../texts/english', q='What did the Nobel committee do?')
-    run_textstar('../texts/cosmo',q="What's new about gravity?")
+    run_textstar('../texts/cosmo',q="What's new about field equations?")
 
 
 if __name__ == "__main__":
