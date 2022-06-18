@@ -63,17 +63,24 @@ class W:
         return f"W('{self.lemma}','{self.word}','{self.tag}')"
 
 
-def sents2graph(lss):
+def kth(k, m):
+    return reversed([((x + k) % m, x % m) for x in range(0, m, k)])
+
+
+def sents2graph(lss, max_sk=3, max_wk=3):
     g = nx.DiGraph()
-    g.add_edge(0, len(lss) - 1)  # first to last sent
-    for sent_id, (ls, _) in enumerate(lss):
-        if sent_id > 0:  # from sent to sent before it
-            g.add_edge(sent_id, sent_id - 1)
-        g.add_edge(ls[0].lemma, sent_id)  # from 1-st word to sent id
-        g.add_edge(sent_id, ls[-1].lemma)  # from sent id to last word
-        # g.add_edge(ls[0], ls[-1]) # from first word to last word
-        for j, w in enumerate(ls):
-            if j > 0: g.add_edge(w.lemma, ls[j - 1].lemma)
+    doclen = len(lss)
+    for sk in range(1, max_sk+1):
+        for (src, sent_id) in kth(sk, doclen):
+            ls, _ = lss[sent_id]
+            g.add_edge(src, sent_id)
+            g.add_edge(ls[0].lemma, sent_id)  # from 1-st word to sent id
+            g.add_edge(sent_id, ls[-1].lemma)  # from sent id to last word
+            for wk in range(1, max_wk+1):
+                for j, i in kth(wk, len(ls)):
+                    wsrc = ls[j]
+                    w = ls[i]
+                    g.add_edge(wsrc.lemma, w.lemma)
     return g
 
 
@@ -127,7 +134,7 @@ def process_text(text, ranker, sumsize, kwsize, trim, show):
 
     g0 = sents2graph(lss)
     print('GRAPH:', g0)
-    g=g0.copy()
+    g = g0.copy()
 
     if show and g.number_of_edges() < 600:
         print('::::', g.number_of_nodes())
@@ -165,7 +172,7 @@ def process_text(text, ranker, sumsize, kwsize, trim, show):
     return sents, clean_kwds[0:kwsize], g0, all_sents
 
 
-def summarize(fname, ranker=nx.pagerank, sumsize=6, kwsize=6, trim=80, show=False):
+def summarize(fname, ranker=nx.pagerank, sumsize=6, kwsize=6, trim=80, show=True):
     with open(fname + ".txt", 'r') as f:
         text = f.read()
 
@@ -179,13 +186,15 @@ def kslide(ws):
         for i in range(len(ws)):
             yield ws_ws[i:i + k]
 
-def near_in(g,x):
+
+def near_in(g, x):
     return set(g.successors(x)).union(g.predecessors(x))
+
 
 def query(all_sents, g, text):
     def sent_id(w):
         lim = g.number_of_nodes()
-        ns = near_in(g,w)
+        ns = near_in(g, w)
         for _ in range(lim):
             found = False
             for r in ns:
@@ -195,29 +204,29 @@ def query(all_sents, g, text):
             if found: return
             ms = set()
             for n in ns:
-                xs = near_in(g,n)
+                xs = near_in(g, n)
                 ms = ms.union(xs)
             ns = ns.union(ms)
 
     def walk(ns):
-        print('!!!!NS:',ns)
+        print('!!!!NS:', ns)
         rs = []
         for i, n in enumerate(ns):
             f = ns[i]
 
             if f not in g.nodes: break
-            #print('there',rs)
+            # print('there',rs)
             rs.append(f)
-            #xs = set(g.successors(f))
-            xs = near_in(g,f)
-            print("@@@@xs:",f,xs)
+            # xs = set(g.successors(f))
+            xs = near_in(g, f)
+            # print("@@@@xs:",f,xs)
             if not xs: break
             if i + 1 > len(ns) - 1: break
             t = ns[i + 1]
             if t not in xs: return
         if rs:
             last = rs[-1]
-            print('LAST:',last)
+            print('LAST:', last)
             yield rs, list(sent_id(last))
 
     lss = text2sents(text)
@@ -234,8 +243,8 @@ def query(all_sents, g, text):
             return
 
 
-def run_textstar(name, q=None):
-    sents, kwds, g, all_sents = summarize(name, show=True)
+def run_textstar(name, q=None, **kwargs):
+    sents, kwds, g, all_sents = summarize(name, **kwargs)
 
     print('SUMMARY:')
     for sent in sents:
@@ -244,31 +253,31 @@ def run_textstar(name, q=None):
     # print("; ".join(kwds) + ".")
     print(kwds)
     print()
-    read=False
+    read = False
     if q is None:
         q = input('Query: ')
-        read=True
+        read = True
     if q:
         if not read: print('Query: ', q)
-        found=False
+        found = False
         for a in query(all_sents, g, q):
-            found=True
-            print('ANSWER:',a)
+            found = True
+            print('ANSWER:', a)
             print('')
         if not found:
-           print('ANSWER: ','I do not know.')
-           print('')
+            print('ANSWER: ', 'I do not know.')
+            print('')
+
 
 def test_texstar():
-    run_textstar('../texts/short', q='Who laughed at Steven?')
-    run_textstar('../texts/short', q='Was the store closed?')
-    run_textstar('../texts/goedel',q='What did his friends tell Gödel?')
-    return
+    # run_textstar('../texts/short', q='Who laughed at Steven?')
+    # run_textstar('../texts/short', q='Was the store closed?')
+
     run_textstar('../texts/small', q='What happened in a restaurant?')
     run_textstar('../texts/english', q='What did the Nobel committee do?')
-    run_textstar('../texts/cosmo',q="What's new about field equations?")
+    run_textstar('../texts/cosmo', q="What's new about field equations?")
 
-
+    run_textstar('../texts/goedel', q='What did his friends tell Gödel?', sumsize=4, kwsize=4)
 
 
 if __name__ == "__main__":

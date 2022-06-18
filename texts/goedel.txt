@@ -1,12 +1,12 @@
 The story goes that Gödel, while preparing for a U.S. citizenship test, in the nineteen-forties, imagined,
 in best Viennese form, that it would be a real test, not the pro forma examination it was.
 He studied the local laws ferociously—trying to learn why, in New Jersey, a township is distinguished
-from a borough—and buried himself in the Constitution, which he studied as though it were the “Principia Mathematica.”
+from a borough—and buried himself in the Constitution, which he studied as though it were the "Principia Mathematica".
 And he emerged confident that he had found a logical contradiction in the Constitution that
 could reverse democratic government itself. He shared this discovery with Einstein, and also
 with Oskar Morgenstern, the co-founder of game theory and a mutual friend;
 both men begged him not to make an issue of it during the test. But, at the ceremony,
 the judge asked Gödel where he came from, and he explained that he was from Austria,
 which had once been a democracy but was now a dictatorship. Isn’t it good that
-such a thing can’t happen here, the judge replied.
-“But it can!” Gödel declared. “I can prove it!”
+such a thing can't happen here, the judge replied.
+"But it can!" Gödel declared "I can prove it!"
