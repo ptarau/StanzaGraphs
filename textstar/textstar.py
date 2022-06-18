@@ -159,7 +159,7 @@ def process_text(text, ranker, sumsize, kwsize, trim, show):
         print('::::', g.number_of_nodes())
         nx.nx_agraph.write_dot(g, 'text.gv')
 
-    if len(lss) < min(sumsize, kwsize):
+    if len(lss) < sumsize:
         print('text to small to summarize', text)
         return [], []
 
@@ -197,9 +197,9 @@ def summarize(fname, ranker=nx.pagerank, sumsize=6, kwsize=6, trim=80, show=Fals
     return process_text(text, ranker, sumsize, kwsize, trim, show)
 
 
-def test_textstar(name):
+def test_textstar(name,**kwargs):
     # sents, kwds = summarize('../texts/english', show=True)
-    sents, kwds = summarize(name, show=True)
+    sents, kwds = summarize(name,**kwargs)
 
     print('SUMMARY:')
     for sent in sents:
@@ -213,3 +213,4 @@ if __name__ == "__main__":
     test_textstar('../texts/small')
     test_textstar('../texts/english')
     test_textstar('../texts/cosmo')
+    test_textstar('../texts/goedel',sumsize=3,kwsize=4)

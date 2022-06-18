@@ -135,7 +135,7 @@ def process_text(text, ranker, sumsize, kwsize, trim, show):
 
     all_sents = [sent for (_, sent) in lss]
 
-    if len(lss) < min(sumsize, kwsize):
+    if len(lss) < sumsize:
         print('text too small to summarize', text)
         return [], [], g, all_sents
 
@@ -179,11 +179,13 @@ def kslide(ws):
         for i in range(len(ws)):
             yield ws_ws[i:i + k]
 
+def near_in(g,x):
+    return set(g.successors(x)).union(g.predecessors(x))
 
 def query(all_sents, g, text):
     def sent_id(w):
         lim = g.number_of_nodes()
-        ns = set(g.successors(w))
+        ns = near_in(g,w)
         for _ in range(lim):
             found = False
             for r in ns:
@@ -193,12 +195,12 @@ def query(all_sents, g, text):
             if found: return
             ms = set()
             for n in ns:
-                xs = set(g.successors(n))
+                xs = near_in(g,n)
                 ms = ms.union(xs)
             ns = ns.union(ms)
 
     def walk(ns):
-        #print('!!!!',ns)
+        print('!!!!NS:',ns)
         rs = []
         for i, n in enumerate(ns):
             f = ns[i]
@@ -206,14 +208,16 @@ def query(all_sents, g, text):
             if f not in g.nodes: break
             #print('there',rs)
             rs.append(f)
-            xs = g.successors(f)
+            #xs = set(g.successors(f))
+            xs = near_in(g,f)
+            print("@@@@xs:",f,xs)
             if not xs: break
             if i + 1 > len(ns) - 1: break
             t = ns[i + 1]
             if t not in xs: return
         if rs:
             last = rs[-1]
-
+            print('LAST:',last)
             yield rs, list(sent_id(last))
 
     lss = text2sents(text)
@@ -257,10 +261,13 @@ def run_textstar(name, q=None):
 
 def test_texstar():
     run_textstar('../texts/short', q='Who laughed at Steven?')
+    run_textstar('../texts/short', q='Was the store closed?')
+    run_textstar('../texts/goedel',q='What did his friends tell Gödel?')
     return
     run_textstar('../texts/small', q='What happened in a restaurant?')
     run_textstar('../texts/english', q='What did the Nobel committee do?')
     run_textstar('../texts/cosmo',q="What's new about field equations?")
+
 
 
 
