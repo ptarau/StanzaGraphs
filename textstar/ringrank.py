@@ -145,7 +145,7 @@ def process_text(text, ranker, sumsize, kwsize, trim, show):
     all_sents = [sent for (_, sent) in lss]
 
     if len(lss) < sumsize:
-        print('text too small to summarize', text)
+        print('*** Text too SMALL to summarize: ***\n\n', text)
         return [], [], g, all_sents
 
     # for f,t in g.edges(): print(t,'<-',f)
@@ -211,7 +211,7 @@ def query(all_sents, g, text):
             ns = ns.union(ms)
 
     def walk(ns):
-        print('!!!!NS:', ns)
+        #print('!!!!NS:', ns)
         rs = []
         for i, n in enumerate(ns):
             f = ns[i]
