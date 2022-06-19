@@ -74,9 +74,10 @@ def sents2graph(lss, max_sk=3, max_wk=3):
         for (src, sent_id) in kth(sk, doclen):
             ls, _ = lss[sent_id]
             g.add_edge(src, sent_id)
+            if sk > 1: continue
             g.add_edge(ls[0].lemma, sent_id)  # from 1-st word to sent id
             g.add_edge(sent_id, ls[-1].lemma)  # from sent id to last word
-            if sk>1: continue
+
             for wk in range(1, max_wk+1):
                 for j, i in kth(wk, len(ls)):
                     wsrc = ls[j]
