@@ -8,8 +8,8 @@ def cosine(u, v):
 
 class UnivSims:
     def __init__(self):
-        module_url = "https://tfhub.dev/google/universal-sentence-encoder/4"
-        #module_url = "https://tfhub.dev/google/universal-sentence-encoder-large/5"
+        #module_url = "https://tfhub.dev/google/universal-sentence-encoder/4"
+        module_url = "https://tfhub.dev/google/universal-sentence-encoder-large/5"
         self.model = hub.load(module_url)
 
     def digest(self,text_or_sents):
