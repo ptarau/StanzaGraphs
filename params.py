@@ -14,6 +14,7 @@ PARAMS = dict(
     TARGET_LANG='en',  # tried zh,fr,sp,de,hu,ro,ar,el,la,it,ru,ja
     #RANKER='betweenness',
     RANKER='pagerank',
+    #RANKER='degrank',
     UPLOAD_DIRECTORY='uploads/',
     OUTPUT_DIRECTORY='out/',
     k_count=8,

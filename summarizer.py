@@ -12,17 +12,16 @@ from rankers import ranker_dict
 from translator import translate
 
 
-
-
 class NLP(stanza.Pipeline):
-    def __init__(self,processors='tokenize,lemma,pos,depparse',**kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, processors='tokenize,pos,lemma,depparse', **kwargs):
+        super().__init__(processors=processors,**kwargs)
 
     def __call__(self, text):
         print('!!! GOT', len(text))
-        text=clean_text(text)
+        text = clean_text(text)
         doc = super().__call__(text)
         return doc
+
 
 def clean_text(data):
     texts = sent_tokenize(data)
@@ -43,6 +42,7 @@ def clean_text(data):
         clean.append(sent)
     new_data = "\n".join(clean)
     return new_data
+
 
 class Summarizer:
     """
@@ -121,17 +121,17 @@ class Summarizer:
                 hw = sent.words[x.head - 1]
                 if self.is_keynoun(x):  # reverse link to prioritize key nouns
                     yield hw.lemma, hw.upos, "rev_" + x.deprel, x.upos, x.lemma, sid
-                    yield (sid, 'SENT', 'ABOUT', x.upos, x.lemma, sid)
+                    yield sid, 'SENT', 'ABOUT', x.upos, x.lemma, sid
                     if x.lemma not in first_occ:
                         first_occ[(x.lemma, x.upos)] = sid
-                        yield (x.lemma, x.upos, 'DEFINED_IN', 'SENT', sid, sid)
+                        yield x.lemma, x.upos, 'DEFINED_IN', 'SENT', sid, sid
                 else:
                     yield x.lemma, x.upos, x.deprel, hw.upos, hw.lemma, sid
                 if x.deprel in ("compound", "flat"):
                     comp = x.lemma + " " + hw.lemma
                     yield x.lemma, x.upos, 'IN', 'COMP', comp, sid
                     yield hw.lemma, hw.upos, 'IN', 'COMP', comp, sid
-                    yield (sid, 'SENT', 'ABOUT', 'COMP', comp, sid)
+                    yield sid, 'SENT', 'ABOUT', 'COMP', comp, sid
 
         for sent_id, sentence in enumerate(self.doc.sentences):
             for word in sentence.words:
@@ -178,7 +178,7 @@ class Summarizer:
             r = sum(ranks[x] for x in ws if x in ranks)
             r = r * (ranks[sid] / (1 + math.log(1 + len(ws))))
             # r=ranks[sid]
-            return (r, ws)
+            return r, ws
 
         def extend_kwd(w):
 
@@ -260,6 +260,7 @@ class Summarizer:
         for w in kws: print(w, end='; ')
         print("\n")
         if picg: gshow(picg, file_name='pics/' + self.fname + '.gv')
+
 
 def facts2nx(fgen):
     """
@@ -365,8 +366,8 @@ def test(fname='texts/english'):
 
 
 if __name__ == "__main__":
-    #test(fname='texts/english')
-    #test(fname='texts/cosmo')
+    test(fname='texts/english')
+    # test(fname='texts/cosmo')
     test(fname='texts/goedel')
     # test(fname='texts/spanish')
     # test(fname='texts/chinese')
