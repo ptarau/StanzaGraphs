@@ -1,0 +1,698 @@
+How could machines learn to reason and plan ?
+How could machines learn representations of percepts and action plans at multiple levels of abstraction , enabling them to reason , predict , and plan at multiple time horizons ?
+This position paper proposes an architecture and training paradigms with which to construct autonomous intelligent agents .
+It combines concepts such as configurable predictive world model , behavior driven through intrinsic motivation , and hierarchical joint embedding architectures trained with self-supervised learning .
+1 Prologue This document is not a technical nor scholarly paper in the traditional sense , but a position paper expressing my vision for a path towards intelligent machines that learn more like animals and humans , that can reason and plan , and whose behavior is driven by intrinsic objectives , rather than by hard-wired programs , external supervision , or external rewards .
+Many ideas described in this paper ( almost all of them ) have been formulated by many authors in various contexts in various form .
+The present piece does not claim priority for any of them but presents a proposal for how to assemble them into a consistent whole .
+It also lists a number of avenues that are likely or unlikely to succeed .
+The text is written with as little jargon as possible , and using as little mathematical prior knowledge as possible , so as to appeal to readers with a wide variety of backgrounds including neuroscience , cognitive science , and philosophy , in addition to machine learning , robotics , and other fields of engineering .
+I hope that this piece will help contextualize some of the research in AI whose relevance is sometimes difficult to see .
+1 2 Introduction Animals and humans exhibit learning abilities and understandings of the world that are far beyond the capabilities of current AI and machine learning ( ML ) systems .
+How is it possible for an adolescent to learn to drive a car in about 20 hours of practice and for children to learn language with what amounts to a small exposure .
+How is it that most humans will know how to act in many situation they have never encountered ?
+By contrast , to be reliable , current ML systems need to be trained with very large numbers of trials so that even the rarest combination of situations will be encountered frequently during training .
+Still , our best ML systems are still very far from matching human reliability in real-world tasks such as driving , even after being fed with enormous amounts of supervisory data from human experts , after going through millions of reinforcement learning trials in virtual environments , and after engineers have hardwired hundreds of behaviors into them .
+The answer may lie in the ability of humans and many animals to learn world models , internal models of how the world works .
+How can machines learn to represent the world , learn to predict , and learn to act largely by observation ?
+Interactions in the real world are expensive and dangerous , intelligent agents should learn as much as they can about the world without interaction ( by observation ) so as to minimize the number of expensive and dangerous trials necessary to learn a particular task .
+How can machine reason and plan in ways that are compatible with gradient-based learning ?
+Our best approaches to learning rely on estimating and using the gradient of a loss , which can only be performed with differentiable architectures and is difficult to reconcile with logic-based symbolic reasoning .
+How can machines learn to represent percepts and action plans in a hierarchical manner , at multiple levels of abstraction , and multiple time scales ?
+Humans and many animals are able to conceive multilevel abstractions with which long-term predictions and long-term planning can be performed by decomposing complex actions into sequences of lower-level ones .
+The present piece proposes an architecture for intelligent agents with possible solutions to all three challenges .
+The main contributions of this paper are the following : 1. an overall cognitive architecture in which all modules are differentiable and many of them are trainable ( Section 3 , Figure 2 ) .
+Impatient readers may prefer to jump directly to the aforementioned sections and figures .
+2.1 Learning World Models Human and non-human animals seem able to learn enormous amounts of background knowledge about how the world works through observation and through an incomprehensibly small amount of interactions in a task-independent , unsupervised way .
+It can be hypothesized that this accumulated knowledge may constitute the basis for what is often called common sense .
+Common sense can be seen as a collection of models of the world that can tell an agent what is likely , what is plausible , and what is impossible .
+Using such world models , animals can learn new skills with very few trials .
+They can predict the consequences of their actions , they can reason , plan , explore , and imagine new solutions to problems .
+Importantly , they can also avoid making dangerous mistakes when facing an unknown situation .
+The use of forward models that predict the next state of the world as a function of the current state and the action being considered has been standard procedure in optimal control since the 1950s ( Bryson and Ho , 1969 ) and bears the name model-predictive control .
+The use of differentiable world models in reinforcement learning has long been neglected but is making a comeback ( see for example ( Levine , 2021 ) ) A self-driving system for cars may require thousands of trials of reinforcement learning to learn that driving too fast in a turn will result in a bad outcome , and to learn to slow down to avoid skidding .
+By contrast , humans can draw on their intimate knowledge of intuitive physics to predict such outcomes , and largely avoid fatal courses of action when learning a new skill .
+Common sense knowledge does not just allow animals to predict future outcomes , but also to fill in missing information , whether temporally or spatially .
+It allows them to produce interpretations of percepts that are consistent with common sense .
+When faced with an ambiguous percept , common sense allows animals to dismiss interpretations that are not consistent with their internal world model , and to pay special attention as it may indicate a dangerous situation and an opportunity for learning a refined world model .
+I submit that devising learning paradigms and architectures that would allow machines to learn world models in an unsupervised ( or self-supervised ) fashion , and to use those models to predict , to reason , and to plan is one of the main challenges of AI and ML today .
+One major technical hurdle is how to devise trainable world models that can deal with complex uncertainty in the predictions .
+2.2 Humans and Animals learn Hierarchies of Models Humans and non-human animals learn basic knowledge about how the world works in the first days , weeks , and months of life .
+Although enormous quantities of such knowledge are acquired quite quickly , the knowledge seems so basic that we take it for granted .
+In the first few months of life , we learn that the world is three-dimensional .
+It is consistent with the idea that abstract concepts , such as the fact that objects are subject to gravity and inertia , are acquired on top of less abstract concepts , like object permanence and the assignment of objects to broad categories .
+Much of this knowledge is acquired mostly by observation , with very little direct intervention , particularly in the first few weeks and months .
+The fact that every point in a visual percept has a distance is the best way to explain how our view of the world changes from our left eye to our right eye , or when our head is being moved .
+Parallax motion makes depth obvious , which in turn makes the notion of object obvious , as well as the fact that objects can occlude more distant ones .
+Once the existence of objects is established , they can be automatically assigned to broad categories as a function of their appearance or behavior .
+On top of the notion of object comes the knowledge that objects do not spontaneously appear , disappear , change shape , or teleport : they move smoothly and can only be in one place at any one time .
+Once such concepts are acquired , it becomes easy to learn that some objects are static , some have predictable trajectories ( inanimate objects ) , some behave in somewhat unpredictable ways ( collective phenomena like water , sand , tree leaves in the wind , etc ) , and some seem to obey different rules ( animate objects ) .
+Notions of intuitive physics such as stability , gravity , inertia , and others can emerge on top of that .
+The effect of animate objects on the world ( including the effects of the subject ’ s own actions ) can be used to deduce cause-and-effect relationships , on top of which linguistic and social knowledge can be acquired .
+Figure 1 , courtesy of Emmanuel Dupoux , shows at what age infants seem to acquire basic concepts such as object permanence , basic categories , intuitive physics , etc .
+Concepts at higher levels of abstraction seem to develop on top of lower-level ones .
+Equipped with this knowledge of the world , combined with simple hard-wired behaviors and intrinsic motivations/objectives , animals can quickly learn new tasks , predict the 4 consequences of their actions and plan ahead , foreseeing successful courses of actions and avoiding dangerous situations .
+But can a human or animal brain contain all the world models that are necessary for survival ?
+One hypothesis in this paper is that animals and humans have only one world model engine somewhere in their prefrontal cortex .
+That world model engine is dynamically configurable for the task at hand .
+With a single , configurable world model engine , rather than a separate model for every situation , knowledge about how the world works may be shared across tasks .
+This may enable reasoning by analogy , by applying the model configured for one situation to another situation .
+All modules in this model are assumed to be “ differentiable ” , in that a module feeding into another one ( through an arrow connecting them ) can get gradient estimates of the cost ’ s scalar output with respect to its own output .
+The configurator module takes inputs ( not represented for clarity ) from all other modules and configures them to perform the task at hand .
+The perception module estimates the current state of the world .
+The world model module predicts possible future world states as a function of imagined actions sequences proposed by the actor .
+The cost module computes a single scalar output called “ energy ” that measures the level of discomfort of the agent .
+The short-term memory module keeps track of the current and predicted world states and associated intrinsic costs .
+The actor module computes proposals for action sequences .
+The world model and the critic compute the possible resulting outcomes .
+The actor can find an optimal action sequence that minimizes the estimated future cost , and output the first action in the optimal sequence .
+It is composed of a number of modules whose functions are described below .
+their precise function is determined by the configurator module .
+The role of the configurator is executive control : given a task to be executed , it pre-configures the perception , the world model , the cost and the actor for the task at hand .
+The configurator modulates the parameters of the modules it feeds into .
+The configurator module takes input from all other modules and configures them for the task at hand by modulating their parameters and their attention circuits .
+The perception module receives signals from sensors and estimates the current state of the world .
+For a given task , only a small subset of the perceived state of the world is relevant and useful .
+The perception module may represent the state of the world in a hierarchical fashion , with multiple levels of abstraction .
+The configurator primes the perception system to extract the relevant information from the percept for the task at hand .
+The world model module constitutes the most complex piece of the architecture .
+The world model may predict natural evolutions of the world , or may predict future world states resulting from a sequence of actions proposed by the actor module .
+The world model may predict multiple plausible world states , parameterized by latent variables that represent the uncertainty about the world state .
+What aspects of the world state is relevant depends on the task at hand .
+The configurator configures the world model to handle the situation at hand .
+The predictions are performed within an abstract representation space that contains information relevant to the task at hand .
+Ideally , the world model would manipulate representations of the world state at multiple levels of abstraction , allowing it to predict over multiple time scales .
+A key issue is that the world model must be able to represent multiple possible predictions of the world state .
+The natural world is not completely predictable .
+This is particularly true if it contains other intelligent agents that are potentially adversarial .
+But it is often true even when the world only contains inanimate objects whose behavior is chaotic , or whose state is not fully observable .
+There are two essential questions to answer when building the proposed architectures : ( 1 ) How to allow the world model to make multiple plausible prediction and represent uncertainty in the predictions , and ( 2 ) how to train the world model .
+The cost module measures the level of “ discomfort ” of the agent , in the form of a scalar quantity called the energy .
+The energy is the sum of two energy terms computed by two sub-modules : the Intrinsic Cost module and the Trainable Critic module .
+The overall objective of the agent is to take actions so as to remain in states that minimize the average energy .
+The input to the module is the current state of the world , produced by the perception module , or potential future states predicted by the world model .
+The ultimate goal of the agent is minimize the intrinsic cost over the long run .
+This is where basic behavioral drives and intrinsic motivations reside .
+The design of the intrinsic cost module determines the nature of the agent ’ s behavior .
+This may include feeling “ good ” ( low energy ) when standing up to motivate a legged robot to walk , when influencing the state of the world to motivate agency , when interacting with humans to motivate social behavior , when perceiving joy in nearby humans to motivate empathy , when having a full energy supplies ( hunger/satiety ) , when experiencing a new situation to motivate curiosity and exploration , when fulfilling a particular program , etc .
+The intrinsic cost module may be modulated by the configurator , to drive different behavior at different times .
+The Trainable Critic module predicts an estimate of future intrinsic energies .
+Like the intrinsic cost , its input is either the current state of the world or possible states predicted by the world model .
+For training , the critic retrieves past states and subsequent intrinsic costs stored in the associative memory module , and trains itself to predict the latter from the former .
+The function of the critic module can be dynamically configured by the configurator to direct the system towards a particular sub-goal , as part of a bigger task .
+Because both sub-modules of the cost module are differentiable , the gradient of the energy can be back-propagated through the other modules , particularly the world model , the actor and the perception , for planning , reasoning , and learning .
+The short-term memory module stores relevant information about the past , current , and future states of the world , as well as the corresponding value of the intrinsic cost .
+The world model accesses and updates the short-term memory while temporally predicting future ( or past ) states of the world , and while spatially completing missing information or correcting inconsistent information about the current world state .
+The world model can send queries to the short-term memory and receive retrieved values , or store new values of states .
+The critic module can be trained by retrieving past states and associated intrinsic costs from the memory .
+The architecture may be similar to that of Key-Value Memory Networks ( Miller et al. , 2016 ) This module can be seen as playing some of same roles as the hippocampus in vertebrates .
+The actor module computes proposals for sequences of actions and outputs actions to the effectors .
+The actor proposes a sequence of actions to the world model .
+The world model predicts future world state sequences from the action sequence , and feeds it to the cost .
+Given a goal defined by the cost ( as configured by the configurator ) , the cost computes the estimated future energy associated with the proposed action sequence .
+Since the actor has access to the gradient of the estimated cost with respect to the proposed action sequence , it can compute an optimal action sequence that minimizes the estimated cost using gradientbased methods .
+If the action space is discrete , dynamic programming may be used to find an optimal action sequence .
+Once the optimization is completed , the actor outputs the first action ( or a short sequence of actions ) to the effectors .
+This reactive process does not make use of the world model nor of the cost .
+The first one involves no complex reasoning , and produces an action directly from the output of the perception and a possible short-term memory access .
+The second mode involves reasoning and planning through the world model and the cost .
+Many types of reasoning can be viewed as forms of energy minimization .
+The resulting action is sent to the effectors .
+The function of the policy module is modulated by the configurator , which configures it for the task at hand .
+The policy module implements a purely reactive policy that does not involve deliberate planning nor prediction through the world model .
+It may use the short-term memory for the associative retrieval of an action given the current state .
+In this mode , gradients of the cost f [ 0 ] with respect to actions can only be estimated by polling the world with multiple perturbed actions , but that is slow and potentially dangerous .
+This process would correspond to classical policy gradient methods in reinforcement learning .
+It runs the world model for one step , predicting the next state s [ 1 ] , then it waits for the next percept resulting from the action taken , and uses the observed world state as a target for the predictor .
+With the use of a world model , the agent can imagine courses of actions and predict their effect and outcome , lessening the need to perform an expensive and dangerous search for good actions and policies by trying multiple actions in the external world and measuring the result .
+The cost module computes and stores the immediate cost associated with that state .
+This can be done through a gradient-based procedure in which gradients of the cost are back-propagated through the compute graph to the action variables .
+Through an optimization or search procedure , the actor infers a sequence of actions that minimizes the total energy .
+It then sends the first action in the sequence ( or the first few actions ) to the effectors .
+Since the cost and the model are differentiable , gradient-based methods can be used to search for optimal action sequences as in classical optimal control .
+Since the total energy is additive over time , dynamic programming can also be used , particularly when the action space is small and discretized .
+Pairs of states ( computed by the encoder or predicted by the predictor ) and corresponding energies from the intrinsic cost and the trainable critic are stored in the short-term memory for subsequent training of the critic .
+The entire process is repeated for the next perception-action episode .
+7. memory : after every action , the states and associated costs from the intrinsic cost and the critic are stored in the short-term memory .
+These pairs can be used later to train or adapt the critic .
+This procedure is essentially what is known as Model-Predictive Control ( MPC ) with receding horizon in the optimal control literature .
+The difference with classical optimal control is that the world model and the cost function are learned .
+While gradientbased optimization methods can be efficient when the world model and cost are wellbehaved , situations in which the action-cost mapping has discontinuities may require to use other optimization strategies , particularly if the state and/or action spaces can be discretized .
+In real situations , the world is likely to be somewhat unpredictable .
+Multiple states may result from a single initial state and action due to the fact that the world is intrinsically stochastic ( aleatoric uncertainty ) , or that the state representation s [ t ] contains incomplete information about the true world state ( epistemic uncertainty ) , or that the world model ’ s prediction accuracy is imperfect due to limited training data , representational power , or computational constraints .
+Using Mode-2 is onerous , because it mobilizes all the resources of the agent for the task at hand .
+It involves running the world model for multiple time steps repeatedly .
+This results in a policy module that performs amortized inference , and produces an approximation for a good action sequence .
+The policy module can then be used to produce actions reactively in Mode-1 , or to initialize the action sequence prior to Mode-2 inference and thereby accelerate the optimization .
+It is configurable by the configurator for the task at hand , but it can only be used for a single task at a time .
+Hence , similarly to humans , the agent can only focus on one complex task at a time .
+The agent may possess multiple policy modules working simultaneously , each specialized for a particular set of tasks .
+This process allows the agent to use the full power of its world model and reasoning capabilities to acquire new skills that are then “ compiled ” into a reactive policy module that no longer requires careful planning .
+3.1.4 Reasoning as Energy Minimization The process of elaborating a suitable action sequence in Mode-2 can be seen as a form of reasoning .
+Both IC and TC are composed of multiple submodules whose output energies are linearly combined .
+Each submodule imparts a particular behavioral drive in the agent .
+The weights in the linear combination , ui and vj , are determined by the configurator module and allow the agent to focus on different subgoals at different times .
+optimization of the energy with respect to action sequences .
+More generally , the “ actions ” can be seen as latent variables representing abstract transformations from one state to the next .
+This type of planning though simulation and optimization may constitute the kind of reasoning that is most frequent in natural intelligence .
+Many classical forms of reasoning in AI can actually be formulated as optimization problems ( or constraint satisfaction problems ) .
+It is certainly the case for the kind of probabilistic inference performed with factor graphs and probabilistic graphical models .
+The proposed architecture is , in fact , a factor graph in which the cost modules are log factors .
+But the kind of reasoning that the proposed architecture enables goes beyond traditional logical and probabilistic reasoning .
+It allows reasoning by simulation and by analogy .
+3.2 The Cost Module as the Driver of Behavior The overall architecture of the cost module is shown in Figure 6 .
+The weights in the linear combination , ui and vj , are modulated by the configurator module and allow the agent to focus on different subgoals at different times .
+The intrinsic cost module ( IC ) is where the basic behavioral nature of the agent is defined .
+It is where basic behaviors can be indirectly specified .
+They may also include basic drives to help the agent learn basic skills or accomplish its missions .
+For example , a legged robot may comprise an intrinsic cost to drive it to stand up and walk .
+This may also include social drives such as seeking the company of humans , finding interactions with humans and praises from them rewarding , and finding their pain unpleasant ( akin to empathy in social animals ) .
+Other intrinsic behavioral drives , such as curiosity , or taking actions that have an observable impact , may be included to maximize the diversity of situations with which the world model is trained ( Gottlieb et al. , 2013 ) The IC can be seen as playing a role similar to that of the amygdala in the mammalian brain and similar structures in other vertebrates .
+To prevent a kind of behavioral collapse or an uncontrolled drift towards bad behaviors , the IC must be immutable and not subject to learning ( nor to external modifications ) .
+In general , the behavioral nature of an AI agent can be specified in four ways : 1. by explicitly programming a specific behavior activated when specific conditions are met 2. by defining an objective function in such a way that the desired behavior is executed by the agent as a result of finding action sequences that minimize the objective .
+The agent observes the actions of an expert teacher , and trains a Mode-1 policy module to reproduce it .
+The agent observes expert teachers , and infers an objective function that their behavior appears to be optimizing when they act .
+This process is sometimes called inverse reinforcement learning .
+The second method is considerably simpler to engineer than the first one , because it merely requires to design an objective , and not design a complete behavior .
+The second method is also more robust : a preordained behavior may be invalidated by unexpected conditions or a changing environment .
+In more complex schemes , it may use combinations of future intrinsic energies as targets .
+Note that the state sequence may contain information about the actions planned or taken by the agent .
+to satisfy the objective despite unexpected conditions and changes in the environment .
+The second method exploits the learning and inference abilities of the agent to minimize the amount of priors hard-wired by the designer that are likely to be brittle .
+3.3 Training the Critic An essential question is how to train the critic .
+The principal role of the critic is to predict future values of the intrinsic energy .
+The stored states and corresponding intrinsic energies may correspond to a perceived state or to a state imagined by the world model during a Mode-2 episode .
+With a suitable memory architecture , the retrieval may involve interpolations of keys and retrieved values .
+The process is shown in Figure 7 The critic can be trained to predict future intrinsic energy values by retrieving a past state vector sτ together with an intrinsic energy at a later time IC ( sτ +δ ) .
+More complex schemes can be devised to predict expectations of discounted future energies , or distributions thereof .
+Note that the state vectors may contain information about the actions taken or imagined by the actor .
+At a general level , this is similar to critic training methods used in such reinforcement learning approaches as A2C .
+The scores are normalized and used as coefficients to output a linear combination of the stored values .
+4 Designing and Training the World Model Arguably , designing architectures and training paradigms for the world model constitute the main obstacles towards real progress in AI over the next decades .
+One of the main contributions of the present proposal is precisely a hierarchical architecture and a training procedure for world models that can represent multiple outcomes in their predictions .
+The prediction of future inputs ( or temporarily unobserved inputs ) is a special case of pattern completion .
+In this work , the primary purpose of the world model is seen as predicting future representations of the state of the world .
+There are three main issues to address .
+First , quite evidently , the quality of the world model will greatly depend on the diversity of state sequences , or triplets of ( state , action , resulting state ) it is able to observe while training .
+Second , because the world is not entirely predictable , there may be multiple plausible world state representations that follow a given world state representation and an action from the agent .
+The world model must be able to meaningfully represent this possibly-infinite collection of plausible predictions .
+Third , the world model must be able to make predictions at different time scales and different levels of abstraction .
+The first issue touches on one of the main questions surrounding learning for sequential decision processes : the diversity of the “ training set ” depends on the actions taken .
+The second issue is even more dire : the world is not entirely predictable .
+Hence , the world model should be able to represent multiple plausible outcomes from a given state and ( optionally ) an action .
+This may constitute one of the most difficult challenges to which the present proposal brings a solution .
+The third issue relates to the problem of long-term prediction and planning .
+Humans plan complex goals at an abstract level and use high-level descriptions of the world states and actions to make predictions .
+High-level goals are then decomposed into sequences of more elementary sequences of subgoals , using shorter-term prediction from the world model to produce lower-level actions .
+This decomposition process is repeated all the way down to millisecond-by-millisecond muscle control , informed by local conditions .
+The question of how world models could represent action plans at multiple time scales and multiple levels of abstraction is discussed in Section 4.6 16 4.1 Self-Supervised Learning Self-Supervised Learning ( SSL ) is a paradigm in which a learning system is trained to capture the mutual dependencies between its inputs .
+Concretely , this often comes down to training a system to tell us if various parts of its input are consistent with each other .
+For example , in a video prediction scenario , the system is given two video clips , and must tell us to what degree the second video clip is a plausible continuation of the first one .
+In a pattern completion scenario , the system is given part of an input ( image , text , audio signal ) together with a proposal for the rest of the input , and tells us whether the proposal is a plausible completion of the first part .
+The reason is that there may be an infinite number of y that are compatible with a given x .
+In a video prediction setting , there is an infinite number of video clips that are plausible continuations of a given clip .
+It may be difficult , or intractable , to explicitly represent the set of plausible predictions .
+But it seems less inconvenient to merely ask the system to tell us if a proposed y is compatible with a given x .
+The energy function produces low energy values around the data points , and higher energies away from the regions of high data density , as symbolized by the contour lines of the energy landscape .
+The EBM implicit function formulation enables the system to represent multi-modal dependencies in which multiple values of y are compatible with a given x .
+To enable Mode-2 planning , a predictive world model should be trained to capture the dependencies between past and future percepts .
+It should be able to predict representations of the future from representations of the past and present .
+This principle ensures a trade-off between making the evolution of the world predictable in the representation space , and capturing as much information as possible about the world state in the representation .
+What concepts could such an SSL system learn by being trained on video ?
+Our hypothesis is that a hierarchy of abstract concepts about how the world works could be acquired .
+Learning a representation of a small image region such that it is predictable from neighboring regions surrounding it in space and time would cause the system to extract local edges and contours in images , and to detect moving contours in videos .
+Learning a representation of images such that the representation of a scene from one viewpoint is predictable from the representation of the same scene from a slightly different viewpoint would cause the system to implicitly represent a depth map .
+A depth map is the simplest way to explain how a view of a scene changes when the camera moves slightly .
+Once the notion of depth has been learned , it would become simple for the system to identify occlusion edges , as well as the collective motion of regions belonging to a rigid object .
+SSL is a learning paradigm in which a learning system is trained to “ fill in the blanks ” , or more precisely to capture the dependencies between observed parts of the input and possibly unobserved parts of the input .
+In a general pattern completion scenario , various parts of the input may be observed or unobserved at various times .
+In the right panel , an energy landscape is represented in which dark discs represent data points , and closed lines represents contours ( level sets ) of the energy function .
+Once the notion of object emerges in the representation , concepts like object permanence may become easy to learn : objects that disappear behind others due to parallax motion will invariably reappear .
+The distinction between inanimate and animate object would follow : inanimate object are those whose trajectories are easily predictable .
+Intuitive physics concepts such as stability , gravity , momentum , may follow by training the system to perform longer-term predictions at the object representation level .
+One may imagine that through predictions at increasingly abstract levels of representation and increasingly long time scales , more and more complex concepts about how the world works may be acquired in a hierarchical fashion .
+The idea that abstract concepts can be learned through prediction is an old one , formulated in various way by many authors in cognitive science , neuroscience , and AI over several decades .
+The latent variable can be seen as parameterizing the set of possible relationships between an x and a set of compatible y .
+In the dual view example , inference finds the camera motion that best explains how x could be transformed into y .
+4.2 Handling Uncertainty with Latent Variables As was pointed out above , one of the main issues is enabling the model to represent multiple predictions .
+A latent variable is an input variable whose value is not observed but inferred .
+A latent variable can be seen as parameterizing the set of possible relationships between an x and a set of compatible y .
+Latent variables are used to represent information about y that can not be extracted from x .
+To tell whether x and y are indeed views from the same scene , one may need to infer the displacement of the camera between the two views .
+Similarly , if x is a picture of a car coming to a fork in the road , and y is a picture of the same car a few seconds later on one of the branches of the fork , the compatibility between x and y depends on a binary latent variable that can be inferred : did the car turn left or right .
+It should contain all information that would be useful for the prediction , but is not observable , or not knowable .
+I may not know whether the driver in front of me will turn left or right , accelerate or brake , but I can represent those options by a latent variable .
+4.3 Training Energy-Based Models Before we discuss EBM training , it is important to note that the definition of EBM does not make any reference to probabilistic modeling .
+Hence the energy function is viewed as the fundamental object and is not assumed to implicitly represent the unnormalized logarithm of a probability distribution .
+Making the energy of the training sample low is easy : it is sufficient for the loss to be an increasing function of the energy , and for the energy to have a lower bound .
+The difficult question is how to ensure that the energies of ŷ different from y are higher than the energy of y .
+What EBM architectures are susceptible to collapse ?
+Whether an EBM may be susceptible to collapse depends on its architecture .
+Figure 10 shows a number of standard architectures and indicates whether they can be subject to collapse .
+If Z is too “ large ” then the region of lowenergy y may be larger than the region of high data density .
+If z has the same dimension as y , the system could very well give zero energy to the entire y space .
+The information capacity of z should be just enough so that varying z over its set will produce all the plausible ỹ for a given x .
+( c ) Auto-encoder : can collapse if the system learns the identity function or if it can correctly reconstruct a region of y space that is much larger than the region of high data density , thereby giving low energy to an overly large region .
+( d ) Simple joint embedding architecture : can collapse if the encoders ignore the inputs and produce representations that remain constant and equal , or if the encoders are invariant over overly broad regions of the space .
+If the encoders ignore the inputs , and produce constant and equal codes sx = sy , the entire space will have zero energy .
+How do we design the loss to prevent collapse ?
+There are two approaches : contrastive methods and regularized methods .
+In the following , I will argue that contrastive methods have flaws and that regularized ( non contrastive ) methods are much more likely to be preferable in the long run .
+The contrastive sample ŷ should be picked in such a way as to ensure that the EBM assigns higher energies to points outside the regions of high data density .
+A conceptual diagram of an energy landscape is shown on the left .
+The region of low energy is shown in orange ( a level set of the energy function ) .
+regularized methods ( bottom right ) push down on the energy of training samples and use a regularizer term that minimizes the volume of low-energy regions .
+This regularization has the effect of “ shrink-wrapping ” the regions of high data density within the low-energy regions , to the extent that the flexibility of the energy function permits it .
+One issue with contrastive methods is that the energy will only be pulled up wherever contrastive samples have been placed .
+One must devise methods that preferentially place contrastive samples in regions of low energy , which is what Monte-Carlo and MCMC methods do .
+However , a disadvantage of contrastive methods is that the number of contrastive samples necessary to make an energy surface adopt a good shape may grow exponentially with the dimension of y space .
+This makes the energy grow at least quadratically with the distance to the data manifold .
+Contrastive methods also include such classical methods as probabilistic models trained with maximum likelihood that are not automatically normalized .
+Generative Adversarial Networks can also be seen as contrastive methods in which the ŷ are produced by the trainable generator network .
+But there are two main issues with contrastive methods .
+Second , when y is in a high-dimensional space , and if the EBM is flexible , it may require a very large number of contrastive samples to ensure that the energy is higher in all dimensions unoccupied by the local data distribution .
+Because of the curse of dimensionality , in the worst case , the number of contrastive samples may grow exponentially with the dimension of the representation .
+This is the main reason why I will argue against contrastive methods .
+Regularized methods for EBM training are much more promising in the long run than contrastive methods because they can eschew the curse of dimensionality that plagues contrastive methods .
+They consist in constructing a loss functional that has the effect of pushing down on the energies of training samples , and simultaneously minimizing the volume of y space to which the model associates a low energy .
+The volume of the low-energy region is measured by a regularization term in the energy and/or in the loss .
+By minimizing this regularization term while pushing down on the energies of data points , the regions of low energy will “ shrink-wrap ” the regions of high data density .
+The main advantage of non-contrastive regularized methods is that they are less likely than contrastive methods to fall victim to the curse of dimensionality .
+The main question is precisely how to design such volume-minimizing regularizers .
+The answer depends greatly on the architecture of the model , which is discussed in the next sections .
+It is important to note that contrastive and regularized methods are not incompatible with each other , and can be used simultaneously on the same model .
+Similarly , in the auto-encoder architecture , restricting the information capacity of sy will restrict the volume of y space that can be reconstructed with low energy .
+Lastly , in the Joint Embedding Architecture , Maximizing the information that sx contains about x and sy contains about y will minimize the volume of y space that can take low energy .
+In the following , we will focus on an architecture for SSL the Joint Embedding Predictive Architectures ( JEPA ) which can seen as a combination of the Joint Embedding Architecture and the Latent-Variable Generative Architecture .
+JEPA is not generative in the sense that it can not easily be used to predict y from x .
+The two variables x and y are fed to two encoders producing two presentations sx and sy .
+These two encoders may be different .
+They are not required to possess the same architecture nor are they required to share their parameters .
+This is enabled by the fact that the encoder of y may choose to produce an abstract representation from which irrelevant details have been eliminated .
+But there are two ways a JEPA may represent the multiplicity of values of y compatible with x .
+The first one is invariance properties of the y encoder , the second one is the latent variable z , as explained below .
+With JEPA , we lose the ability to generate outputs , but we gain a powerful way to represent multi-modal dependencies between inputs and outputs .
+The encoders do not need to be identical .
+The energy is the prediction error .
+Simple variations of the JEPA may use no predictor , forcing the two representations to be equal , or may use a fixed predictor with no latent , or may use simple latents such as discrete variables .
+The main advantage of JEPA is that it performs predictions in representation space , eschewing the need to predict every detail of y , and enabling the elimination of irrelevant details by the encoders .
+z may represent whether the car takes the left branch or the right branch of the road .
+multi-modality through latent variable predictor : The predictor may use a latent variable z to capture the information necessary to predict sy that is not present in sx .
+For example , if x is a video clip of a car approaching a fork in the road , sx and sy may represent the past and future positions , orientations , velocities and other characteristics of the car , ignoring irrelevant details such as the trees bordering the road or the texture of the sidewalk .
+But , as pointed out above , contrastive methods tend to become very inefficient in high dimension .
+The relevant 25 Minimize Prediction Error Maximize Information Content Maximize Information Content Minimize Information Content Figure 13 : Non-contrastive training of JEPA .
+The main attraction of JEPAs is that they can be trained with non-contrastive methods .
+Examples of such non-contrastive criteria for JEPA training include VICReg and Barlow Twins .
+As with every EBM , JEPAs can also be trained with contrastive methods .
+But doing so runs into the curse of dimensionality and limits the practical dimension of sy .
+dimension here is that of sy , which may be considerably smaller than y , but still too high for efficient training .
+What makes JEPAs particularly interesting is that we can devise non-contrastive methods to train them .
+As explained in section 4.3 , non-contrastive methods use regularizers that measure the volume of space that can take low energy values .
+In the case of the JEPA , this can be done through four criteria , as depicted in Figure 13 : 1. maximize the information content of sx about x 2. maximize the information content of sy about y 3. make sy easily predictable from sx 4. minimize the information content of the latent variable z used in the prediction .
+Criteria 1 and 2 prevent the energy surface from becoming flat by informational collapse .
+They ensure that sx and sy carry as much information as possible about their inputs .
+Without these criteria the system could choose to make sx and sy constant , or weakly informative , which would make the energy constant over large swaths of the input space .
+Criterion 4 prevents the system from falling victim to another type of informational collapse by forcing the model to predict sy with as little help from the latent as possible .
+This 26 type of collapse can be understood with the following thought experiment .
+This corresponds to a totally flat and collapsed energy surface .
+How do we prevent this collapse from happening ?
+By limiting or minimizing the information content of the latent variable .
+A few concrete examples may help build an intuitive understanding of the phenomenon .
+Hence , these can be the only values of sy with zero energy , and there are only K of them .
+In representation space , the energy will be the minimum of K quadratic energy wells .
+This is the basis of Variational Auto-Encoders and similar models .
+A more complete discussion of regularizers that can minimize the information content of latent variables is beyond the scope of this paper .
+The ability of the JEPA to predict in representation space makes it considerably preferable to generative models that directly produce a prediction of y .
+In a video prediction scenario , it is essentially impossible to predict every pixel value of every future frame .
+The details of the texture on a carpet , the leaves of a tree moving in the wind , or the ripples on a pond , can not be predicted accurately , at least not over long time periods and not without consuming enormous resources .
+The information content of the representations sx and sy is maximized by first mapping them to higher-dimensional embeddings vx and vy through an expander ( e.g .
+The loss function drives the covariance matrix of the embeddings towards the identity ( e.g .
+ignore details of the inputs that are not easily predictable .
+if the volume of sets of y that map to the same sy is minimal .
+To turn this criterion into a differentiable loss , we need to make some assumptions .
+Variance : a hinge loss that maintains the standard deviation of each component of sy and vy above a threshold over a batch .
+Covariance : a covariance loss in which the covariance between pairs of different components of vy are pushed towards zero .
+This has the effect of decorrelating the components of vy , which will in turn make the components of sy somewhat independent .
+The same criteria are applied to sx and vx separately .
+In the simplest implementations of VICReg , the predictor is constant ( equal to the identity function ) , making the representations invariant to the transformation that turns x into y .
+In more sophisticated versions , the predictor may have no latent variable , or may depend on a latent variable that is either discrete , low dimensional , or stochastic .
+The fourth criterion is necessary when the predictor uses a latent variable whose information content must be minimized , for example a vector whose dimension approaches or surpasses that of s̃y .
+Inferring the latent variable through gradient-based methods may be onerous .
+But the computational cost can be greatly reduced by using amortized inference , as explained in Appendix 8.3.3 .
+While contrastive methods ensure that representations of different inputs in a batch are different , VICReg ensures that different components of representations over a batch are different .
+VICReg is contrastive over components , while traditional contrastive methods are contrastive over vectors , which requires a large number of contrastive samples .
+But the most promising aspect of JEPA trained with VICReg and similar non-contrastive methods is for learning hierarchical predictive world models , as we examine in the next section .
+What is predictable and what does not get represented is determined implicitly by the architectures of the encoders and predictor .
+They determine a inductive bias that defines what information is predictable or not .
+But it would be useful to have a way to bias the system towards representations that contain information relevant to a class of tasks .
+This can be done by adding prediction heads that take s̃y as input and are trained to predict variables that are easily derived from the data and known to be relevant to the task .
+4.6 Hierarchical JEPA ( H-JEPA ) JEPA models trained non-contrastively may constitute our best tool for learning world models that are able to learn relevant abstractions .
+More abstract representations ignore details of the inputs that are difficult to predict in the long term , enabling them to perform longer-term predictions with coarser descriptions of the world state .
+criteria , a JEPA can choose to train its encoders to eliminate irrelevant details of the inputs so as to make the representations more predictable .
+In other words , a JEPA will learn abstract representations that make the world predictable .
+Unpredictable details will be eliminated by the invariance properties of the encoder , or will be pushed into the predictor ’ s latent variable .
+The amount of information thereby ignored will be minimized by the training criteria and by the latent variable regularizer .
+It is important to note that generative latent-variable models are not capable of eliminating irrelevant details , other than by pushing them into a latent variable .
+This is why we advocate against the use of generative architectures .
+The capacity of JEPA to learn abstractions suggests an extension of the architecture to handle prediction at multiple time scales and multiple levels of abstraction .
+Intuitively , lowlevel representations contain a lot of details about the input , and can be used to predict in the short term .
+But it may be difficult to produce accurate long-term predictions with the same level of details .
+When driving a car , given a proposed sequence of actions on the steering wheel and pedals over the next several seconds , drivers can accurately predict the trajectory of their car over the same period .
+The details of the trajectory over longer periods are harder to predict because they may depend on other cars , traffic lights , pedestrians , and other external events that are somewhat unpredictable .
+But the driver can still make accurate predictions at a higher level of abstraction : ignoring the details of trajectories , other cars , traffic signals , etc , the car will probably arrive at its destination within a predictable time frame .
+The detailed trajectory will be absent from this level of description .
+A discrete latent variable may be used to represent multiple alternative routes .
+One can envision architectures of this type with many levels , possibly using convolutional and other modules , and using temporal pooling between levels to coarse-grain the representation and perform longer-term predictions .
+I submit that the ability to represent sequences of world states at several levels of abstraction is essential to intelligent behavior .
+With multi-level representations of world states and actions , a complex task can be decomposed into successively more detailed subtasks , instantiated into actions sequences when informed by local conditions .
+Driving to the train station can be decomposed into walking out of the house , starting the car , and driving .
+Getting out of the house requires standing up , walking to the door , opening the door , etc .
+This decomposition descends all the way down to millisecond-by-millisecond muscle controls , which can only be instantiated when the relevant environmental conditions are perceived ( obstacles , traffic lights , moving objects , etc ) .
+4.7 Hierarchical Planning If our world model can perform predictions hierarchically , can it be used to perform Mode-2 reasoning and planning hierarchically ?
+Hierarchical planning is a difficult topic with few solutions , most of which require that the intermediate vocabulary of actions be predefined .
+But if one abides by the deep learning philosophy , those intermediate representations of action plans should also be learned .
+The lower layer then infers an action sequence that minimizes the subgoal costs .
+Although only a 2-layer hierarchy is shown here , it is straightforward to extend the concept to multiple levels .
+The process described here is sequential top-down , but a better approach would be to perform a joint optimization of the actions in all the layers .
+One can think of them as conditions that the lower-level state must satisfy in order for the high-level predictions to be accurate .
+The process just described is top down and greedy .
+But one may advantageously iterate the optimization so that high level and low-level action sequences are optimized jointly .
+The cost modules may be configured by the configurator for the situation at hand .
+The idea that an action is merely a condition to be satisfied by the level below is actually an old one in control theory .
+A quadratic cost measures the squared distance between the target and the current state , and the control is simply proportional to the negative gradient of the cost with respect to the action variables .
+4.8 Handling uncertainty The real world is not entirely predictable .
+Uncertainty about predictions can be handled by predictors with latent variables .
+The latent variables ( red circles ) contain information about the prediction that can not be derived from the prior observation .
+The latent variables must be regularized to prevent an energy collapse and to force the system to predict as much as possible without the help of it .
+At planning time , latent variables are sampled from distributions obtained by applying a Gibbs distribution to the regularizers .
+To produce consistent latent sequences , the parameters of the regularizer can be functions of previous states and retrieved memories .
+As the prediction progresses , the number of generated state trajectories may grow exponentially .
+Directed search and pruning strategies must be employed .
+With multiple predicted trajectories , optimal action sequences can be computed that minimize the average cost , or a combination of average and variance of the cost so as to minimize risk .
+• the world is fully observable , but the sensors only give partial information about the world state ( epistemic uncertainty , type 1 ) • the representation of the world state extracted by the perception module does not contain the full information necessary for accurate prediction ( epistemic uncertainty , type 2 ) .
+Much of the literature in reinforcement learning is focused on dealing with the stochastic nature of the environment .
+It is often assumed from the start that models , critics and policies must represent distributions .
+This is what is often referred to in the ML literature as “ the reparameterization trick ” .
+We do not need to use this trick here , since we view the latent-variable parameterization of the predictions as fundamental .
+Using previous predictions to configure the latent regularizer biases the system towards generating “ good ” trajectories .
+As the prediction progresses , the number of generated state trajectories may grow exponentially : if each latent variable has k possible discrete values , the number of possible trajectories will grow as k t , where t is the number of time steps .
+In the case of continuous latents , one may sample latents from the continuous distributions defined by the regularizer .
+Given a sample of all the latents , the optimal action sequences at every levels can be inferred .
+However , the prediction process may need to be repeated for multiple drawings of the latents , so as to cover the set of plausible outcomes .
+The inference process may be used for multiple predictions to produce an action that does not just minimize the expected cost , but also minimizes the uncertainty on the expected cost .
+4.8.1 World Model Architecture The details of the architecture of the world model should depend on the type of environment the agent evolves in .
+It is likely that the best module architectures in a JEPA should include some sort of gating or dynamic routing mechanism .
+For example , the best way to handle low-level , short-term predictions in videos is by extracting simple local feature vectors and displacing those feature vectors from one frame to the next , depending on predicted motions .
+The latent variables may encode a map of displacements , which can modulate routing connections between one frame and the next .
+For longer-term prediction at a higher level of abstraction , the relevant features are objects and their interactions .
+34 Separating the World Model from the Ego Model : The natural world is complex and somewhat unpredictable , requiring a powerful model with latent variables to account for the unpredictability .
+On the other hand , the agent itself is somewhat more predictable : a particular action on effector will produce a motion that can often be predicted deterministically .
+This suggests that the agent should possess a separate model of itself , perhaps without latent variables ( Sobal et al. , 2022 ) as the effect of actions on proprioception somewhat easier to predict than the evolution of the external world or the effect of actions on it .
+4.9 Keeping track of the state of the world Traditionally , modules in deep learning architectures communicate states through vectors or multi-dimensional arrays .
+But this tends to be a very inefficient method when the state of the object being modeled only changes in minor ways from one time to the next .
+A typical action of an agent will only modify a small portion of the state of the world .
+If a bottle is being moved from the kitchen to the dining room , the states of the bottle , the kitchen , and the dining room will be modified .
+But the rest of the world will be unaffected .
+This suggests that the state of the world should be maintained in some sort of writable memory .
+Whenever an event occurs , only the part of the world-state memory affected by the event is to be updated , while the rest is to be left unchanged .
+One can view each entry as representing the state of an entity in the world .
+In the above example of the bottle , the world model may contain keys kbottle , kkitchen , kdining−room respectively representing the bottle , the kitchen and the dining room .
+The initial value of vbottle encodes its location as “ kitchen ” , the inital value of vkitchen encodes its content as including the bottle , and the initial value of vdining−room encodes its content as not including the bottle .
+After the event , the location and contents are updated .
+All of these operations can be done in a differentiable manner , and would hence allow to back-propagate gradients through them .
+4.10 Data Streams Much knowledge about the world is learnable through pure observation .
+The laws of motion of physical objects can , in principle , be derived from observation , without a need for intervention .
+One can list five modes of information gathering with which an agent can learn about how the world works : 1. passive observation : the agent is being fed a sensor stream ( e.g .
+video , audio , etc ) 2. active foveation : the agent is being fed a stream within which the focus of attention can be directed without affecting the environment .
+For example , watching a scene while being able to orient the vision and sound sensors , or being being fed a wideangle , high resolution video and/or audio stream within which the focus of attention can be directed .
+3. passive agency : sensory streams in which another agent acting on the environment is being observed , enabling the inference of causal effects of agent actions on the state of the environment .
+4. active egomotion : the agent receives sensory streams from a real or virtual environment within which the position of the sensors can be modified without significantly affecting the environment .
+This enables the establishment of causal models in which the agent can learn to predict the consequences of its actions .
+In a complex environment , it may not be practical to collect enough passive data for the world model to capture a sufficient portion of the environment ’ s behavior .
+But to do so may require intrinsic motivation modules that drive attention , curiosity , 36 and exploration into corners of the state space in which the world model ’ s prediction are currently inexact or uncertain .
+5 Designing and Training the Actor The role of the actor module is threefold : 1. inferring optimal action sequences that minimize the cost , given the predictions produced by the world model for Mode-2 actions .
+2. producing multiple configurations of latent variables that represent the portion of the world state the agent does not know .
+There is no conceptual difference between an action and a latent variable .
+The configurations of both sets of variables must be explored by the actor .
+For latent variables , configurations must be explored to plan under uncertainty .
+For action variables configurations must be explored to produce an optimal one that minimizes the cost .
+In adversarial scenarios ( such as games ) , the latent configurations must be explored that maximize the cost .
+In effect , the actor plays the role of an optimizer and explorer .
+When the world model and the cost are well-behaved , the actor module can use a gradient-based optimization process to infer an optimal action sequence .
+To do so , it receives estimates of the gradient of the cost computed by backpropagating gradients through the cost and the unfolded world model .
+It uses those estimates to update the action sequence .
+When the world model or the cost are not so well-behaved , a gradient-based search for an optimal action sequence may fail .
+If the action space is discrete or can be discretized , one can use dynamic programming methods or approximate dynamic programming methods such as beam search or Monte-Carlo tree search .
+In effect , any planning method developed in the context of optimal control , robotic , or “ classical ” AI may be used in this context .
+Once an optimal action sequence is obtained through the planning / inference / optimization process , one can use the actions as targets to train a policy network .
+The policy network may subsequently be used to act quickly , or merely to initialize the proposed action sequence to a good starting point before the optimization phase .
+Multiple policy networks can be trained for multiple tasks .
+The actor also produces configurations of latent variables .
+These latent variables represent the portion of the world state that the agent does not know .
+Ideally , the actor would systematically explore likely configurations of the latents .
+But in a similar way as the policy network , one may devise a latent amortized inference module that learns distributions of latent variables .
+Good distributions would produce predictions that are plausible .
+The distribution primate ’ s may depend on all the variables available at that time .
+37 6 Designing the Configurator The configurator is the main controller of the agent .
+It takes input from all other modules and modulates their parameters and connection graphs .
+In a scenario in which the predictor and the upper layers of the perception encoder are transformer blocks , the configurator outputs may constitute extra input tokens to these transformer blocks , thereby modulating their connection graphs and functions .
+The configurator module is necessary for two reasons : hardware reuse , and knowledge sharing .
+There is an obvious advantage to be able to reuse the same circuit for multiple tasks , particularly if the tasks can be accomplished sequentially , and if the amount of resources ( e.g .
+A reasonable hypothesis is that a world model trained for a given environment can be used for a range of different tasks with minor changes .
+One can imagine a “ generic ” world model for the environment with a small portion of the parameters being modulated by the configurator for the task at hand .
+This would be more data efficient and computationally efficient than having separate world models for each skill .
+The disadvantage is that the agent can only accomplish one task at a time .
+The configurator may prime the perception module for a particular task by modulating the parameters at various levels .
+For tasks that require a rapid detection of simple motifs , the configurator may modulate the weights of low-level layers in a convolutional architecture .
+For tasks that involve satisfying relationships between objects ( such as assembling two parts with screws ) the configuration may be performed by modulating tokens in high-level transformer modules .
+The predictor part of the world model must be able to perform a wide range of functions depending on the task at hand .
+For predictors performing short-term predictions at a low level of abstraction , configuration may mean dynamic signal routing .
+In a low-level retinotopic feature array representation , prediction may be reduced to local displacements of individual feature vectors , accompanied with small transformations of those vectors .
+Transformer blocks are particularly appropriate for object-based reasoning in which objects interact .
+The reason is that the function of transformer blocks is equivariant to permutation .
+Thanks to that property , one does not need to worry about which object is assigned to which input token : the result will be identical and consistent with the input assignment .
+Recent work in model-based robotics have proposed to use a transformer operating at the level of an entire trajectory , imposing constraints on the attention circuits to configure the predictor for causal prediction or other tasks ( Janner et al. , 2021 ) .
+Conveniently , the function of a transformer block is easy to configure by adding extra input tokens .
+Those extra inputs have the effect of modulating the connection graph used by the rest of the network , thereby allowing the specification of a wide range of input-output functions .
+38 Perhaps the most important function of the configurator is to set subgoals for the agent and to configure the cost module for this subgoal .
+As mentioned in Section 3.2 , a simple way to make the cost configurable is by modulating the weights of a linear combination of elementary cost sub-modules .
+This may be appropriate for the immutable Intrinsic Cost submodule : allowing for a complex modulation of the Intrinsic Cost may make the basic drives of the agent difficult to control , including cost terms that implement safety guardrails .
+In contrast , one can imagine more sophisticated architectures allowing the Trainable Critic part of the cost to be flexibly modulated .
+As with the predictor , if the high-level cost is formulated as a set of desired relationships between objects ( “ is the nut set on the screw ? ” ) one may use a transformer architecture trained to measure to what extent the state of the world diverges from the condition to be satisfied .
+As with the predictor , extra token inputs can be used to modulate the function .
+One question that is left unanswered is how the configurator can learn to decompose a complex task into a sequence of subgoals that can individually be accomplished by the agent .
+7 Related Work Most of the ideas presented in the paper are not new , and have been discussed at length in various forms in cognitive science , neuroscience , optimal control , robotics , AI , and machine learning , particularly in reinforcement learning .
+Perhaps the main original contributions of the paper reside in • an overall cognitive architecture in which all modules are differentiable and many of them are trainable .
+• A way to use H-JEPA as the basis of predictive world models for hierarchical planning under uncertainty .
+Below is an attempt to connect the present proposal with relevant prior work .
+Given the scope of the proposal , the references can not possibly be exhaustive .
+Learning world models is particularly important in the context of robotics , especially for grasping and manipulation where sample efficiency is paramount and simulation is often inaccurate .
+A difficult setting is one in which the main input is visual , and a world model must be learned from video .
+The key issue of how to represent uncertainty in the prediction remains .
+To solve the multi-modality/blurriness problem , other works have proposed to perform video prediction in representations spaces .
+Unfortunately , the requirement for a pre-trained vision pipeline reduces the general usability of these methods for learning world models by observation .
+In the same spirit as JEPA , there have been proposals for automatically learning representations of video frames so they can be easily predicted .
+To perform state trajectory predictions , recent works have advocated the use of transformers , as proposed in the present paper .
+Transformers are ideal to represent the dynamics of discrete objects in interaction , and have successfully been applied to the prediction of car trajectories ( Mercat et al. , 2020 ) .
+An interesting proposal is the trajectory transformer architecture in which a transformer is fed with the sequence of predicted states over an entire episode ( Janner et al. , 2021 ) .
+The pattern of attention can be constrained so as to force the system to only attend to the past so it can be operated in a causal manner ( without looking at the future ) , and trained to predict the next state , actions , and cost from previously observed or predicted states , actions , and costs .
+Wayne and Abbott proposed an architecture that uses a stack of trained forward models that specify intermediate goals for the lower layers ( Wayne and Abbott , 2014 ) .
+The presence of an Intrinsic Cost provides a differentiable and efficient way to direct the agent to follow certain behaviors and to learn certain skills .
+In this paper , EBM designates a much broader category of models that treat the energy function as fundamental , and directly manipulate its landscape through learning .
+Many methods have been proposed in the past that directly manipulate the energy .
+Most EBM approaches for unsupervised or self-supervised learning have been contrastive .
+Joint Embedding Architectures ( JEA ) trained with contrastive methods and mutual information maximization methods have a long history .
+The first non-contrastive JEA was ( Becker and Hinton , 1992 ) which was based on maximizing a measure of mutual information between the representations from two branches seeing to different views of the 41 same scene .
+This was trained contrastively for the purpose of verifying signatures handwritten on a pen tablet .
+Some methods can be seen as “ distillation ” approaches in which one branch of the Siamese network is a teacher whose output are used as targets for the other branch .
+But the class of non-contrastive methods advocated in the present proposal prevent collapse by maximizing the information content of the embeddings .
+Some efforts have been devoted to building video datasets to test intuitive physics common sense in machines and infants ( Riochet et al. , 2019 ) .
+There is evidence that people construct simplified representations of the world for planning in which irrelevant details are abstracted away ( Ho et al. , 2022 ) Consciousness is a rather speculative topic , owing to the difficulty of defining what consciousness is .
+I will not speculate about whether some version of the proposed architecture could possess a property assimilable to consciousness , but will only mention the work of Dehaene and collaborators who have proposed two types of consciousness that they call C1 and C2 .
+42 8 Discussion , Limitations , Broader Relevance Constructing the cognitive architecture of the present proposal , instantiating all the details , and making the system work for non-trivial tasks will not be an easy task .
+The path to success is likely riddled with unforeseen obstacles .
+It will probably take many years to work them all out .
+A lot of hard work needs to be done to instantiate the proposed architecture and turn it into a functional system .
+There may be flaws and pitfalls that may appear to be unsolvable within the specifications of the proposed architecture .
+The first question is whether a Hierarchical JEPA can be built and trained from videos .
+Could it learn the type of abstract concept hierarchy mentioned in section 4.1 ?
+One somewhat open question relative to the JEPA is how precisely to regularize the latent variable so as to minimize its information content .
+But it is not clear which approach will ultimately be the best .
+The current proposal does not prescribe a particular way for the actor to infer latent variable instantiations and optimal action sequences .
+While the differentiability of all the modules makes it possible in principle to use gradient-based optimization to infer optimal action sequences , the optimization problem may be very difficult in practice .
+Instantiating multiple configurations of latent variables in Mode-2 planning/reasoning may require additional mechanisms not described in the present proposal .
+Humans seem to be endowed with an ability to spontaneously cycle through alternative interpretations of a percept , as demonstrated by the Necker cube and other visual illusions that have several equally-plausible interpretations .
+In the context of the present model , different interpretation of an ambiguous percept may be represented by different values of a latent variable .
+While one could imagine a number of exploratory mechanisms to systematically explore the space of possible latent variable values , no such mechanism is described here .
+The present proposal does not specify the details of the architecture of the various modules .
+For example , it is probable that the predictor will require some sort of dynamic routing and gating circuits in its micro-architecture .
+Predictors for low-level representation may have to be specialized to represent the kind of small transformations of the representation that can occur in the short term .
+Predictor modules dealing with higher level representations may require more generic architectures that manipulate objects and their relationships .
+But none of this is specified in the present proposal .
+Similarly , the precise architecture and function of the short-term memory and how it may be used to represent beliefs about the state of the world are somewhat fuzzy .
+But getting such an architecture to work for complex planning and control may prove difficult .
+Of all the least understood aspects of the current proposal , the configurator module is the most mysterious .
+In particular , while planning a complex task , the configurator is supposed to identify sequences of subgoals and configure the agent to successively accomplish those subgoals .
+Precisely how to do that is not specified .
+This is merely a list of foreseeable questions , but many questions and problems will inevitably surface as instances of the proposed systems are put together .
+8.2 Broader Relevance of the Proposed Approach Although the proposed architecture is not specifically designed to model autonomous intelligence , reasoning , and learning in humans and other animals , one can draw some parallels .
+The following is somewhat speculative and provided as a way to connect some concepts in cognitive science and neuroscience that have inspired the present work .
+Many of the modules in the proposed architecture have counterparts in the mammalian brain that perform similar functions .
+The perception module corresponds to the visual , auditory , and other sensory areas of the cortex , as well as some of the association areas .
+The world model and the critic correspond to various part of the prefrontal cortex .
+The intrinsic cost module corresponds to structures in the basal ganglia involved in rewards , including the amygdala .
+The trainable critic may correspond to part of the prefrontal cortex involved in reward prediction .
+The function of the short-term memory overlaps with what is known of the hippocampus .
+The configurator may correspond to structures in the prefrontal cortex that perform executive control and modulate attention .
+The actor regroups areas in the pre-motor cortex that elaborate and encode motor plans .
+The idea of predictive world model has long been a prominent concept in cognitive science , and the idea of predictive coding has been a prominent concept in neuroscience .
+The JEPA architecture and the corresponding non-sample-contrastive self-supervised learning method are somewhat consistent with ideas of predictive coding and efficient coding .
+The proposed architecture has a single world model engine that can be configured for the task at hand by the configurator .
+I have argued that this may not only confer a computational advantage through hardware reuse , but also allow knowledge to be shared across multiple tasks .
+The hypothesis of a single , configurable world model engine in the human brain may explain why humans can essentially perform a single “ conscious ” reasoning and planning task at a time .
+A highly-speculative idea is that the illusion of consciouness may be a side-effect of a configurator-like module in the brain that oversees the function of the rest of brain and configures it for the task at hand .
+Perhaps if the brain were large enough to contain many independent , non-configurable world models , a configurator would be unnecessary , and the illusion of consciousness would disappear .
+What is the substrate of emotions in animals and humans ?
+pain , pleasure , hunger , etc ) may be the result of brain structures that play a role similar to the Intrinsic Cost module in the proposed architecture .
+Other emotions such as fear or 44 elation may be the result of anticipation of outcome by brain structures whose function is similar to the Trainable Critic .
+The presence of a cost module that drives the behavior of the agent by searching for optimal actions suggests that autonomous intelligent agents of the type proposed here will inevitably possess the equivalent of emotions .
+In an analogous way to animal and humans , machine emotions will be the product of an intrinsic cost , or the anticipation of outcomes from a trainable critic .
+It is a widely-held opinion that none of the current AI systems possess any level of common sense , even at the level that can be observed in a house cat .
+Animals seem to be able to acquire enough background knowledge about how the world works to exhibit some level of common sense .
+from text ) seem to exhibit very limited levels of common sense , making them somewhat brittle .
+For example , Large language models ( LLMs ) seem to possess a surprisingly large amount of background knowledge extracted from written text .
+But much of human common-sense knowledge is not represented in any text and results from our interaction with the physical world .
+Because LLMs have no direct experience with an underlying reality , the type of common-sense knowledge they exhibit is very shallow and can be disconnected from reality .
+A possible characterization of common sense is the ability to use models of the world to fill in blanks , for example predicting the future , or more generally filling in information about the world that is unavailable from perception or from memory .
+With this definition , common sense is an ability that emerges from a collection of models of the world or from a single model engine configurable to handle the situation at hand .
+This view of common sense sits squarely in the camp of “ grounded intelligence ” : common sense is a collection of models from low-levels of abstraction to high levels , all the way up to knowledge acquired through language .
+Could SSL applied to configurable H-JEPA constitute the substrate of machine common sense ?
+Could a properly-trained and configured H-JEPA embed enough predictive knowledge and capture enough dependencies about the world to exhibit some level of common sense ?
+I speculate that common sense may emerge from learning world models that capture the self-consistency and mutual dependencies of observations in the world , allowing an agent to fill in missing information and detect violations of its world model .
+The section reviews a few potential paths towards human-level intelligence that have been proposed in recent years .
+The surprising power of reinforcement learning for games and other simple environments have led other to claim that reward is enough ( Silver et al. , 2021 ) .
+finally , the limitations of current deep-learning systems when it 45 comes to reasoning have led some to claim that deep learning systems need to be augmented by hard-wired circuitry to enable symbol manipulation ( Marcus and Davis , 2019 ) 8.3.1 Scaling is not enough Large Language Models ( LLMs ) , and more generally , large-scale transformer architectures trained with a form of generative self-supervised learning , have been astonishingly successful at capturing knowledge present in text .
+This has led to a debate in the AI community as to whether human-level AI can be attained by scaling up these architectures .
+My position in this debate is that I do not believe that scaling is enough for two main reasons .
+While this works well for text , which is already a sequence of discrete tokens , it is less suitable for continuous , high dimensional signals such as video .
+Generative models have difficulty representing complex uncertainties in continuous spaces .
+LLMs simplify the representation of uncertainty in the prediction by only dealing with discrete objects from a finite collection ( e.g .
+Representing uncertainty about a word being predicted comes down to producing a vector whose components are scores or probabilities for each word ( or discrete token ) in the dictionary .
+To represent such data , it is necessary to eliminate irrelevant information about the variable to be modeled through an encoder , as in the JEPA .
+Second , current models are only capable of very limited forms of reasoning .
+The absence of abstract latent variables in these models precludes the exploration of multiple interpretations of a percept and the search for optimal courses of action to achieve a goal .
+8.3.2 Reward is not enough The proposed architecture is designed to minimize the number of actions a system needs to take in the real world to learn a task .
+It does so by learning a world model that capture as much knowledge about the world as possible without taking actions in the world .
+It uses intrinsic costs that are differentiable functions of measured or predicted world states .
+This makes the proposal more similar to optimal control than to reinforcement learning .
+In the proposed model , much of learning takes place at the level of the world model ( perceptual encoder and predictor ) .
+In most RL settings the reward ( or the cost , which is a negative reward ) is fed to the agent by the environment .
+In other words , Intrinsic Cost module is the environment itself , and is therefore an unknown function .
+The value of the function can be probed by observing the state of the world , taking an action , and observing the resulting reward .
+The gradient of the reward with respect to the action or the state is unknown and must be estimated by 46 multiple action trials as in policy gradient methods .
+In Actor-Critic methods , the reward function is approximated by a critic module that is trained to approximate expected future values of the reward .
+The critic provides a differentiable approximation of the reward function .
+But model-free RL is extremely sample-inefficient , at least when compared with human and animal learning , requiring very large numbers of trials to learn a skill .
+Model-based RL clearly has the potential of being considerably more sample efficient .
+But the question becomes how to train the world model : is it trained from taking actions and getting rewards , or is it trained by predicting the world state ?
+In the latter case , reward is clearly not enough : most of the parameters in the systems are trained to predict large amounts of observations in the world .
+Contrary to the title of a recent position paper by Silver et al .
+In the proposed architecture , reasoning comes down to energy minimization or constraint satisfaction by the actor using various search methods to find a suitable combination of actions and latent variables , as stated in Section 3.1.4 .
+If the actions and latent variables are continuous , and if the predictor and the cost modules are differentiable and relatively well behaved , one can use gradient-based methods to perform the search .
+But there may be situations where the predictor output changes quickly as a function of the action , and where the action space is essentially discontinuous .
+This is likely to occur at high levels of abstractions where choices are more likely to be qualitative .
+If the action space is discrete with low cardinality , the actor may use exhaustive search methods .
+If the action set cardinality , and hence the branching factor , are too large , the actor may have to resort to heuristic search methods , including Monte-Carlo Tree Search , or other gradient-free methods .
+But the efficiency advantage of gradient-based search methods over gradient-free search methods motivates us to find ways for the world-model training procedure to find hierarchical representations with which the planning/reasoning problem constitutes a continuous relaxation of an otherwise discrete problem .
+A remain question is whether the type of reasoning proposed here can encompass all forms of reasoning that humans and animals are capable of .
+Acknowledgments Ideas in this paper are a distillation of years of interactions with many people .
+It is impossible to list them all here .
+I am thankful to the following colleagues for their comments on the manuscript : Olivier Delalleau , Gus Xia , Yoshua Bengio , and Emmanuel Dupoux .
+Learning to poke by poking : Experiential learning of intuitive physics .
+Interaction networks for learning about objects , relations and physics .
+Unsupervised learning of visual features by contrasting cluster assignments .
+In Advances in Neural Information Processing Systems .
+Improved baselines with momentum contrastive learning .
+Deep reinforcement learning in a handful of trials using probabilistic dynamics models .
+Robust coding over noisy overcomplete channels .
+Unsupervised learning for physical interaction through video prediction .
+Deep visual foresight for planning robot motion .
+Learning visual predictive models of physics for playing billiards .
+The Scientist in the Crib : What Early Learning Tells Us About the Mind .
+Unsupervised feature learning from temporal data .
+Learning fast approximations of sparse coding .
+Recurrent world models facilitate policy evolution .
+Dimensionality reduction by learning an invariant mapping .
+Learning latent dynamics for planning from pixels .
+Mastering atari with discrete world models .
+Momentum contrast for unsupervised visual representation learning .
+Model-predictive policy learning with uncertainty regularization for driving in dense traffic .
+Tracking the world state with recurrent entity networks .
+People construct simplified mental representations to plan .
+Offline reinforcement learning as one big sequence modeling problem .
+In Advances in Neural Information Processing Systems .
+Building machines that learn and think like people .
+Building machines that learn and think like people .
+Learning physical intuition of block towers by example .
+Predicting future instance segmentation by forecasting convolutional features .
+Predicting deeper into the future of semantic segmentation .
+Identification and control of dynamical systems using neural networks .
+Emergence of simple-cell receptive field properties by learning a sparse code for natural images .
+The surprising effectiveness of representation learning for visual imitation .
+Unsupervised learning of video representations using lstms .
+In Proceedings of the IEEE conference on computer vision and pattern recognition , pages 1701–1708 .
+Representation learning with contrastive predictive coding .
+Hierarchical control using networks trained with higherlevel forward models .
+Image augmentation is all you need : Regularizing deep reinforcement learning from pixels .
+Lessons from infant learning for unsupervised machine learning .
+Architectural diagrams use symbols commonly used to draw factor graphs – circles for variables , rectangles for factors – plus rounded rectangles to represent deterministic functions .
+Filled circles represent observed variables , or variables that are outputs of deterministic functions .
+variables that must be inferred by minimizing some cost , or sampled from a distribution .
+These modules have an implicit scalar output that contributes additively to the total energy of the system .
+This is similar to the convention used for factor graphs .
+Rounded rectangles represent deterministic functions , which may have one or several inputs .
+Given a set of inputs , the output is assumed to be easily computable and unique .
+The function is generally assumed to be differentiable .
+Appendix : Symbols and Notations Architectural diagrams in this paper use the symbols shown in Figure 18 .
+We use symbols that are somewhat similar to the representation of factor graphs : circles for variables , rectangles for factors .
+Second , we use an additional symbol , rounded rectangles , to represent deterministic functions with a clear directionality from inputs to outputs .
+More precisely : • Filled circles represent observed variables , or variables that are outputs of deterministic functions .
+These modules have an implicit scalar output that contributes additively to the total energy of the system .
+• Rounded rectangles represent deterministic functions , which may have one or several inputs .
+Given a set of inputs , the output is assumed to be easily computable and unique .
+The function is generally assumed to be differentiable .
+An example is shown on the right of Figure 18 .
+This is particularly important here because the system has access to y and can “ cheat ” by carrying the complete information about y through the encoder .
+When z is continuous , this may be best performed through a gradient-based optimization that involves backpropagating gradients through the model dowen to z for multiple iterations .
+In generative architectures , this may be expensive , requiring to back-propagate through the decoder and the predictor .
+One way to reduce the cost of inference is to use amortized inference .
+The idea is to train a neural net to predict an approximate solution to the inference optimization problem .
+Once trained , the prediction z̃ may be use as an estimate of ž or as an initial value for the inference optimization .
+This is particularly important here because the system has access to y and can “ cheat ” by carrying the complete information about y through the encoder .
+The regularizer R ( z ) is even more important than in the regular inference case because the prediction pathway has access to y and can “ cheat ” by carrying the complete information about y through the encoder .
+Without an information-limiting regularizer This would cause a collapse of the energy function , since it would allow any y to be reconstructed perfectly .
+The regularizer is there to minimize the information that ž may contains about y. Variational Auto-Encoders , and LISTA-style sparse Auto-Encoders belong to the family of Regularized GLVEBM with amortized inference .
+60 Appendix : Loss functions for Contrastive Training of EBM Much can be said about contrastive methods .
+Table 1 lists a few examples of contrastive methods , together with their strategy for picking contrastive samples ŷ and their loss functional .
+Rows 1-2 in the table are exact maximum likelihood methods .
+They assume that the gradient of the log partition function can be computed exactly .
+Row 1 : Maximum Conditional Likelihood for discrete y is used whenever the energy needs to be turned into a probability distribution .
+The loss is the negative log conditional likelihood .
+Row 2 and 3 : Maximum Conditional Likelihood is used for any model that should produce probability estimates .
+Row 2 only applies to tractable models in which the integral in the contrastive term ( or its gradient ) can be computed analytically .
+Row 3 applies to situations where the integral is intractable and its gradient must be approximated by Monte Carlo sampling methods .
+One may start from a training sample and let the Markov chain evolve for a short time , and then accept or reject the resulting sample so as to satisfy detailed balance ( Carreira-Perpiñán and Hinton , 2005 ) .
+As with the pairwise hinge , the logistic loss maximizes the difference between the energies of the contrastive output and the correct output .
+Unlike the pairwise hinge , the difference is pushed to infinity , but with a force that decreases quickly .
+A GAN differs from other contrastive methods in the way contrastive samples are generated .
+The contrastive samples are produced by a generator network that is trained preferentially generate samples that have low energy according to the model .
+In principle , any loss function can be used , as long as it increases with the energy of the correct output , and decreases with the energy of the contrastive sample .
+A denoising AE produces contrastive samples by corrupting outputs from training samples .
+The corruption can be performed by adding noise or by masking parts of the output .
+They are all use loss functions with two terms , one that pushes down on the energy of a training sample , and one the pulls up the energies of one or several contrastive samples .
+They differ by the strategy they employ to generate contrastive samples , and by the precise form of the loss function .
+Exact or approximate Maximum Likelihood methods ( rows 1-4 ) are used whenever the model needs to produce probability estimates .
+When the second term is intractable , its gradient may be approximated through Monte-Carlo methods , which can be seen as particular ways to produce ŷ .
+Pairs of energies for y and ŷ are fed to a loss function that pushes the former to low values and the latter to higher values .
+This can be done with a variety of losses including hinge loss .
+The generator is trained to produce samples to which the model currently attributes a low energy , but should attribute a high energy .
