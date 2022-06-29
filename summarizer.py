@@ -17,7 +17,7 @@ class NLP(stanza.Pipeline):
         super().__init__(processors=processors,**kwargs)
 
     def __call__(self, text):
-        print('!!! GOT', len(text))
+        #print('!!! GOT', len(text))
         text = clean_text(text)
         doc = super().__call__(text)
         return doc
@@ -368,7 +368,8 @@ def test(fname='texts/english'):
 if __name__ == "__main__":
     test(fname='texts/english')
     # test(fname='texts/cosmo')
-    test(fname='texts/goedel')
+    #test(fname='texts/goedel')
+    test(fname='texts/aaipath')
     # test(fname='texts/spanish')
     # test(fname='texts/chinese')
     # test(fname='texts/russian')
