@@ -210,7 +210,8 @@ def test_textstar(name,**kwargs):
 
 
 if __name__ == "__main__":
-    test_textstar('../texts/small')
-    test_textstar('../texts/english')
-    test_textstar('../texts/cosmo')
-    test_textstar('../texts/goedel',sumsize=3,kwsize=4)
+    #test_textstar('../texts/small')
+    #test_textstar('../texts/english')
+    #test_textstar('../texts/cosmo')
+    #test_textstar('../texts/goedel',sumsize=3,kwsize=4)
+    test_textstar('../texts/news',sumsize=4,kwsize=6,show=True)
