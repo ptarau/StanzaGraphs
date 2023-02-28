@@ -4,7 +4,7 @@ import torch
 from torch import nn
 
 from answerer import Data
-from sk_answerer import Inferencer
+from unfinished.sk_answerer import Inferencer
 
 
 # JUST a PROOF OF CONCEPT -

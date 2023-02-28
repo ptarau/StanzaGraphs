@@ -8,7 +8,7 @@ from walker import clean_text_file
 
 st.set_page_config(layout="wide")
 
-st.title('StanzaGraph: Multilingual Summary and Keyword Extractor and Question-Answering System')
+st.sidebar.title('StanzaGraph: Multilingual Summary and Keyword Extractor and Question-Answering System')
 
 left, right = st.columns((1, 1))
 

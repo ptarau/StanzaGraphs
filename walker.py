@@ -167,8 +167,8 @@ if __name__ == "__main__":
         # pdfs="sienna2021/"
 
     )
-    # summarize_all()
+    summarize_all()
     # parsum_all()
     # summarize_all(**params)
 
-    parsum_all(**params)
+    #parsum_all(**params)

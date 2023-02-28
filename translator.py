@@ -26,3 +26,11 @@ def translate(text, source_lang='auto', target_lang=None):
         return translated
     except:
         return text
+
+
+def test_translator():
+    r=translate('El presidente es un duro crítico del sistema.', source_lang='auto', target_lang='en')
+    print('EN:',r)
+
+if __name__=="__main__":
+    test_translator()

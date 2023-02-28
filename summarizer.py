@@ -366,10 +366,10 @@ def test(fname='texts/english'):
 
 
 if __name__ == "__main__":
-    test(fname='texts/english')
-    # test(fname='texts/cosmo')
+    #test(fname='texts/english')
+    test(fname='texts/cosmo')
     #test(fname='texts/goedel')
-    test(fname='texts/aaipath')
-    # test(fname='texts/spanish')
-    # test(fname='texts/chinese')
+    # test(fname='texts/aaipath')
+    #test(fname='texts/spanish')
+    #test(fname='texts/chinese')
     # test(fname='texts/russian')

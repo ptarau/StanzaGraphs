@@ -195,7 +195,7 @@ def sp_test():
     print("\n")
     print("ANSWER(S) TO QUESTION ABOUT SPANISH TEXT:\n")
     i.ask("Who will face a debate this Tuesday?")
-    i.ask("Who asked to wait for the winner of the lection?")
+    i.ask("Who asked to wait for the winner of the election?")
     print("\n")
 
 
