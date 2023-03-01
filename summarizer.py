@@ -11,6 +11,8 @@ from params import *
 from rankers import ranker_dict
 from translator import translate
 
+from eureka import normalize_ranks
+
 
 class NLP(stanza.Pipeline):
     def __init__(self, processors='tokenize,pos,lemma,depparse', **kwargs):
@@ -207,6 +209,11 @@ class Summarizer:
         ranker = ranker_dict[PARAMS['RANKER']]
         g = self.to_nx()
         ranks = ranker(g)
+
+        # normalize sentence ranks with heuristics
+
+        normalize_ranks(ranks)
+
         ns = self.keynouns()
         kwds, sids, picg = ranks2info(g, ranks, self.doc.sentences, ns, wk, sk, self.lang)
         kwds = self.extend_kwds(kwds, ranks)
