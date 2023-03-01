@@ -7,6 +7,8 @@ from timeit import default_timer as timer
 
 import langid
 
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
 PARAMS = dict(
     TRACE=1,
     SEED=1234,

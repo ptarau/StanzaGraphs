@@ -14,10 +14,10 @@ from translator import translate
 
 class NLP(stanza.Pipeline):
     def __init__(self, processors='tokenize,pos,lemma,depparse', **kwargs):
-        super().__init__(processors=processors,**kwargs)
+        super().__init__(processors=processors, **kwargs)
 
     def __call__(self, text):
-        #print('!!! GOT', len(text))
+        # print('!!! GOT', len(text))
         text = clean_text(text)
         doc = super().__call__(text)
         return doc
@@ -275,7 +275,8 @@ def facts2nx(fgen):
     for (f, t), sids in d.items():
         w = 1 / len(sids)  # frequently occuring means "closer"
         # ppp('WEIGHT:',f, '->',t,sids)
-        g.add_edge(f, t, weight=w)
+        if f and t:
+            g.add_edge(f, t, weight=w)
     return g
 
 
@@ -366,10 +367,10 @@ def test(fname='texts/english'):
 
 
 if __name__ == "__main__":
-    #test(fname='texts/english')
+    # test(fname='texts/english')
     test(fname='texts/cosmo')
-    #test(fname='texts/goedel')
+    # test(fname='texts/goedel')
     # test(fname='texts/aaipath')
-    #test(fname='texts/spanish')
-    #test(fname='texts/chinese')
+    # test(fname='texts/spanish')
+    # test(fname='texts/chinese')
     # test(fname='texts/russian')

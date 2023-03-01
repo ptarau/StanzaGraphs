@@ -41,6 +41,6 @@ def sumtest(fname='texts/english'):
 
 
 if __name__ == "__main__":
-    # simtest()
-    sumtest(fname='texts/english')
-    sumtest(fname='texts/cosmo')
+    # sumtest(fname='texts/english')
+    # sumtest(fname='texts/cosmo')
+    sumtest(fname='out/pdftexts/GPT3human')

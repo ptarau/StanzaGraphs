@@ -5,8 +5,14 @@ from multiprocessing import Pool, cpu_count
 from nltk.tokenize import sent_tokenize, word_tokenize
 
 from params import *
-from summarizer import Summarizer
 
+# ALTERNATIVE SUMMARIZERS - uncomment one
+
+from summarizer import Summarizer
+#from refiner import SumarizerWithSims as Summarizer
+#from deepsum import DeepSum as Summarizer
+
+# END ALTERNAIVES
 
 def file2string(fname):
     with open(fname, 'r') as f:
