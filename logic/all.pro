@@ -6,7 +6,7 @@ c:-make.
 
 % data
 :-ensure_loaded('cs_cats.pro').
-:-ensure_loaded('OUTPUT_DIRECTORY/arxiv_all.pro').
+%:-ensure_loaded('OUTPUT_DIRECTORY/arxiv_all.pro').
 
 % optional, for analyzing and explanig the results
 :-ensure_loaded('explainer.pro').
